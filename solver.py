@@ -26,7 +26,7 @@ P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the sto
 a = (np.zeros(550) + 200)/eta
 b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110])/eta
 c = (np.zeros(890) + 100)/eta
-d = np.array([110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380,390,400])/eta
+d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380,390,400])/eta
 # d = np.array([110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,270,280,290,300,310,320,330,340,345])/eta
 e  = (np.zeros(800) + 420)/eta
 # e = (np.zeros(550) + 345)/eta
@@ -144,7 +144,7 @@ def load_following(P_grid):
                             if stored_energy[t] == 0:
                                 P_unload[t] = 0
                             else:
-                                P_unload[t] = min(P_grid[t] - reac.P_max, P_unload_max) # Storage system serving as stopgap for load following
+                                P_unload[t] = min(P_grid[t] - reac.P, P_unload_max) # Storage system serving as stopgap for rapid load following
                             stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
                             reac.P += reac.P_grad*reac.P_max
                             P_core[t] = reac.P
@@ -161,8 +161,8 @@ def load_following(P_grid):
                     P_core[t+1] = reac.P_max
                     
 def print_graph(x1,x2):
+    
     range = (x1,x2)
-    # range = (90,120)
 
     plt.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]))
     plt.xlabel("Time (min)")
