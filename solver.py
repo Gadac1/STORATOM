@@ -157,5 +157,6 @@ def print_graph(x1,x2):
     plt.grid()
     plt.show()
 
+
 load_following(P_grid)
 print_graph(0, 1900)
