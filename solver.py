@@ -14,7 +14,7 @@ dt = 60 # Time step in seconds
 grad = 5/6000 # Reactor power gradient in %/s
 storage_level = 0.1 # Level of thermal storage system at the start of the simulation
 
-reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
+reac = Reactor(345/eta, 345/eta, grad*dt, 550, 400) # Reactor initialization
 sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
 nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
@@ -73,8 +73,11 @@ def load_following(P_grid):
                         reac.P = reac.P_max
                         P_core[t+1] = reac.P
                     else:
-                        reac.P += reac.P_grad*reac.P_max
-                        P_core[t+1] = reac.P
+                        if stored_energy[t-1] + (MW_to_W(reac.P) - MW_to_W(P_grid[t-1]))*dt*t_reac_grid/2 < max_stored_energy - (MW_to_W(reac.P) - MW_to_W(P_grid[t-1]))*dt:
+                            P_core[t+1] = reac.P
+                        else:
+                            reac.P += reac.P_grad*reac.P_max
+                            P_core[t+1] = reac.P
                 else:
                     P_core[t+1] = reac.P                
 
