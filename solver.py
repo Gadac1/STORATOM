@@ -27,12 +27,12 @@ P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the sto
 a = (np.zeros(200) + 200)/eta
 b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110,105])/eta
 c = (np.zeros(890) + 100)/eta
-d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380,390,400])/eta
+d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380])/eta
 # d = np.array([110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,270,280,290,300,310,320,330,340,345])/eta
-e  = (np.zeros(800) + 420)/eta
+e  = (np.zeros(800) + 390)/eta
 # e = (np.zeros(550) + 345)/eta
-P_grid = np.concatenate((a,b,c,d,e)) # Test grid load
-
+f= np.concatenate((a,b,c,d,e)) # Test grid load
+P_grid = np.concatenate((f,f[::-1]*0.9))
 Time = np.zeros(len(P_grid))
 
 P_core = np.zeros(len(P_grid))
@@ -113,12 +113,12 @@ def load_following(P_grid):
                     # Else that means throttling up the reactor does not allow to follow the load. In that case we still throttle it up and we use the
                     # storage system as a gap filler to match the load:
                     else :
+                        reac.P += reac.P_grad*reac.P_max
                         if stored_energy[t] == 0:
                             P_unload[t] = 0
                         else:
                             P_unload[t] = min(P_grid[t] - reac.P, P_unload_max) # Storage system serving as stopgap for rapid load following
                         stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
-                        reac.P += reac.P_grad*reac.P_max
                         P_core[t] = reac.P
                         P_core[t+1] = reac.P
                 
@@ -144,8 +144,9 @@ def print_graph(x1,x2):
     plt.grid()
     plt.show()
 
-    plt.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level")
     plt.plot(Time[range[0]:range[1]], P_grid[range[0]:range[1]]*eta, label = "Grid electrical load")
+    plt.plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, label = "Total output power")
+    plt.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level")
     plt.xlabel("Time (min)")
     plt.ylabel("Core output power and load from the grid (MW)")
     plt.legend(loc='best')
