@@ -9,26 +9,29 @@ import matplotlib.pyplot as mplt
 # All powers in MWth
 # All volumes in m3
 
-eta = 0.33
-dt = 60
+eta = 0.33 # Turbine efficiency
+dt = 60 # Time step in seconds
 storage_level = 0.5 # Level of thermal storage system at the start of the simulation
 
-reac = Reactor(345/eta, 200/eta, 0.05, 550, 400)
-sodium = Fluid(927, 1230, 84)
+reac = Reactor(345/eta, 200/eta, 0.05, 550, 400) # Reactor initialization
+sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
-nitrate_salt = Fluid(1772, 1500, 0.443)
-hot_tank = Tank(15700, storage_level*15700, nitrate_salt, 500)
-cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, 290)
-storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank)
-max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank)
-P_unload_max = 155/eta 
+nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
+hot_tank = Tank(15700, storage_level*15700, nitrate_salt, 500) # Hot tank initialization
+cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, 290) # Cold tank initialization
+storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
+max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
+P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the storage system
 
 a = (np.zeros(550) + 200)/eta
-c = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110])/eta
-b = (np.zeros(890) + 100)/eta
-d = np.concatenate((a,c))
-P_grid = np.concatenate((d,b))
-# P_grid = np.zeros(3*1440)+200/eta
+b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110])/eta
+c = (np.zeros(890) + 100)/eta
+d = np.array([110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380,390,400])/eta
+# d = np.array([110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,270,280,290,300,310,320,330,340,345])/eta
+e  = (np.zeros(800) + 420)/eta
+# e = (np.zeros(550) + 345)/eta
+P_grid = np.concatenate((a,b,c,d,e)) # Test grid load
+
 Time = np.zeros(len(P_grid))
 
 P_core = np.zeros(len(P_grid))
@@ -41,55 +44,30 @@ V_hot_tank[0] = hot_tank.V
 V_cold_tank = np.zeros(len(P_grid))
 V_cold_tank[0] = cold_tank.V
 
+stored_energy = np.zeros(len(P_grid))
+stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in) # Amount of energy at the start in the thermal storage system
+
 mfr_secondary_tot = np.zeros(len(P_grid))
 mfr_storage = np.zeros(len(P_grid))
 
-stored_energy = np.zeros(len(P_grid))
-stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in) # Amount of energy currently in the thermal storage system
+def load_following(P_grid):
 
-test = np.zeros(len(P_grid))
+    for t in range(len(P_grid)-1): # Iteration over the time range given by the grid input
+        
+        Time[t] = t
 
-for t in range(len(P_grid)-1):
+        if P_grid[t] <= 0: 
+            # We compute the time to stop the reactor in minutes if the stop order is given now:
+            t_reac_stop = reac.P/(reac.P_grad*reac.P_max) 
 
-    Time[t] = t
-    mfr_secondary_tot[t] = reac.P / (sodium.cp * (reac.T_out - reac.T_in))
-
-    if P_grid[t] <= 0:
-        t_reac_stop = reac.P/(reac.P_grad*reac.P_max) # Time to stop the reactor in minutes starting now in min
-        test[t] = t_reac_stop
-
-        if stored_energy[t] + MW_to_W(reac.P)*dt*t_reac_stop/2 < max_stored_energy - MW_to_W(reac.P)*dt: # Checking if the storage system would be saturated if we did not cut the reactor power now           
-            P_load[t] = reac.P
-            stored_energy[t+1] = stored_energy[t] + MW_to_W(reac.P)*dt
-
-            if reac.P < reac.P_max:
-                if reac.P_max - reac.P < reac.P_grad*reac.P_max:
-                    reac.P = reac.P_max
-                    P_core[t+1] = reac.P
-                else:
-                    reac.P += reac.P_grad*reac.P_max
-                    P_core[t+1] = reac.P
-            else:
-                P_core[t+1] = reac.P
-
-        else:
-            if reac.P-reac.P_grad*reac.P_max <=0:
-                reac.P = 0
-                P_core[t+1] = reac.P
-            else:
-                reac.P -= reac.P_grad*reac.P_max
-                P_core[t+1] = reac.P
-            P_load[t] = reac.P
-            stored_energy[t+1] = stored_energy[t] + MW_to_W(reac.P)*dt        
-
-    else:
-        t_reac_grid = (reac.P-P_grid[t])/(reac.P_grad*reac.P_max) #Time for the reactor to match the grid power level
-
-        if P_grid[t] <= reac.P:
-            if stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt*t_reac_grid/2 < max_stored_energy - (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt:
-                P_load[t] = reac.P - P_grid[t]
-                stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
-
+            # We then compute the amount of energy that would still be irremediably produced by the reactor if it were to start its shutdown sequence now.
+            # We can now check if the storage system would be saturated by this energy if we did not cut the reactor power now:
+            
+            if stored_energy[t] + MW_to_W(reac.P)*dt*t_reac_stop/2 < max_stored_energy - MW_to_W(reac.P)*dt:           
+                P_load[t] = reac.P
+                # We add the energy produced at this time step to the energy level of the next step:
+                stored_energy[t+1] = stored_energy[t] + MW_to_W(reac.P)*dt 
+                # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient 
                 if reac.P < reac.P_max:
                     if reac.P_max - reac.P < reac.P_grad*reac.P_max:
                         reac.P = reac.P_max
@@ -98,23 +76,92 @@ for t in range(len(P_grid)-1):
                         reac.P += reac.P_grad*reac.P_max
                         P_core[t+1] = reac.P
                 else:
-                    P_core[t+1] = reac.P                
-
+                    P_core[t+1] = reac.P
+            # If the previous condition lead to the saturation of the thermal storage, we start throttling back the reactor now:
             else:
-                if reac.P-reac.P_grad*reac.P_max <= P_grid[t]:
-                    reac.P = P_grid[t]
+                if reac.P-reac.P_grad*reac.P_max <=0:
+                    reac.P = 0
                     P_core[t+1] = reac.P
                 else:
                     reac.P -= reac.P_grad*reac.P_max
                     P_core[t+1] = reac.P
-                P_load[t] = reac.P - P_grid[t]
-                stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
-        
+                P_load[t] = reac.P
+                # We add the energy produced at this time step by the reduced power output to the energy level of the next step:
+                stored_energy[t+1] = stored_energy[t] + MW_to_W(reac.P)*dt        
 
+        else:
+            # We now study the case were the reactor output is above the demand by the electrical grid
+            if P_grid[t] <= reac.P:
+                #We compute the time for the reactor to match the grid power level:
+                t_reac_grid = (reac.P-P_grid[t])/(reac.P_grad*reac.P_max) 
 
+                # We then compute the amount of energy that would still be irremediably stored by the reactor if it were to start matching the grid demand
+                # We can now check if the storage system would be saturated by this energy if we did not reduce the output of the reactor power now:
+                if stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt*t_reac_grid/2 < max_stored_energy - (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt:
+                    P_load[t] = reac.P - P_grid[t]
+                    # In that case we can store the difference of the reactor output and the grid demand over this step in the storage system
+                    stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
+                    # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient 
+                    if reac.P < reac.P_max:
+                        if reac.P_max - reac.P < reac.P_grad*reac.P_max:
+                            reac.P = reac.P_max
+                            P_core[t+1] = reac.P
+                        else:
+                            reac.P += reac.P_grad*reac.P_max
+                            P_core[t+1] = reac.P
+                    else:
+                        P_core[t+1] = reac.P                
 
-def print_graph():
-    range = (0,1439)
+                # If the previous condition lead to the saturation of the thermal storage, we start throttling back the reactor to the grid power requirement now:
+                else:
+                    if reac.P-reac.P_grad*reac.P_max <= P_grid[t]:
+                        reac.P = P_grid[t]
+                        P_core[t+1] = reac.P
+                    else:
+                        reac.P -= reac.P_grad*reac.P_max
+                        P_core[t+1] = reac.P
+                    P_load[t] = reac.P - P_grid[t]
+                    # We add the energy produced at this time step by the reduced power output to the energy level of the next step:
+                    stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
+            
+            else:
+                # If the grid level is above what the reactor is outputting we throttle up the reactor    
+                if P_grid[t] <= reac.P_max:
+                    if reac.P < reac.P_max:
+                        if  reac.P+reac.P_grad*reac.P_max >= P_grid[t]:
+                            reac.P = P_grid[t]
+                            stored_energy[t+1] = stored_energy[t]
+                            P_core[t] = reac.P
+                            P_core[t+1] = reac.P
+
+                        elif reac.P_max - reac.P < reac.P_grad*reac.P_max:
+                            reac.P = reac.P_max
+                            stored_energy[t+1] = stored_energy[t]
+                            P_core[t] = reac.P
+                            P_core[t+1] = reac.P
+                        
+                        else:
+                            if stored_energy[t] == 0:
+                                P_unload[t] = 0
+                            else:
+                                P_unload[t] = min(P_grid[t] - reac.P_max, P_unload_max) # Storage system serving as stopgap for load following
+                            stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
+                            reac.P += reac.P_grad*reac.P_max
+                            P_core[t] = reac.P
+                            P_core[t+1] = reac.P
+                
+                else:
+                    if stored_energy[t] == 0:
+                        P_unload[t] = 0
+                    else:
+                        P_unload[t] = min(P_grid[t] - reac.P_max, P_unload_max)
+                    stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
+                    reac.P = reac.P_max
+                    P_core[t] = reac.P_max
+                    P_core[t+1] = reac.P_max
+                    
+def print_graph(x1,x2):
+    range = (x1,x2)
     # range = (90,120)
 
     plt.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]))
@@ -129,18 +176,19 @@ def print_graph():
     plt.xlabel("Time (min)")
     plt.ylabel("Core output power and load from the grid (MW)")
     plt.legend(loc='best')
-    plt.gca().set_ylim(-10,350)
+    plt.gca().set_ylim(-10,520)
     plt.grid()
     plt.show()
 
-    plt.plot(Time[range[0]:range[1]], P_load[range[0]:range[1]]*eta)
+    plt.plot(Time[range[0]:range[1]], (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta)
     plt.xlabel("Time (min)")
     plt.ylabel("Storage input power (MW)")
-    plt.gca().set_ylim(-10,350)
+    plt.gca().set_ylim(-160,350)
     plt.grid()
     plt.show()
 
     print((stored_energy[-1])/3.6e9)
 
-# if __name__ == '__main__':
-#     print_graph()
+load_following(P_grid)
+print_graph(0, 2200)
+
