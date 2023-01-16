@@ -157,8 +157,5 @@ def print_graph(x1,x2):
     plt.grid()
     plt.show()
 
-    print((stored_energy[-1])/3.6e9)
-
 load_following(P_grid)
 print_graph(0, 1900)
-
