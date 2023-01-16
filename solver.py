@@ -73,11 +73,8 @@ def load_following(P_grid):
                         reac.P = reac.P_max
                         P_core[t+1] = reac.P
                     else:
-                        if stored_energy[t-1] + (MW_to_W(reac.P) - MW_to_W(P_grid[t-1]))*dt*t_reac_grid/2 < max_stored_energy - (MW_to_W(reac.P) - MW_to_W(P_grid[t-1]))*dt:
-                            P_core[t+1] = reac.P
-                        else:
-                            reac.P += reac.P_grad*reac.P_max
-                            P_core[t+1] = reac.P
+                        reac.P += reac.P_grad*reac.P_max
+                        P_core[t+1] = reac.P
                 else:
                     P_core[t+1] = reac.P                
 
