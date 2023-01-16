@@ -67,13 +67,16 @@ def load_following(P_grid):
                 P_load[t] = reac.P - P_grid[t]
                 # In that case we can store the difference of the reactor output and the grid demand over this step in the storage system
                 stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
-                # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient 
+                # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient
+                t_reac_grid_future = (reac.P+reac.P_grad*reac.P_max-P_grid[t+1])/(reac.P_grad*reac.P_max)  
                 if reac.P < reac.P_max:
                     if reac.P_max - reac.P < reac.P_grad*reac.P_max:
                         reac.P = reac.P_max
                         P_core[t+1] = reac.P
-                    else:
+                    elif stored_energy[t+1] + (MW_to_W(reac.P+reac.P_grad*reac.P_max) - MW_to_W(P_grid[t]))*dt*t_reac_grid_future/2 < max_stored_energy - (MW_to_W(reac.P+reac.P_grad*reac.P_max) - MW_to_W(P_grid[t]))*dt:
                         reac.P += reac.P_grad*reac.P_max
+                        P_core[t+1] = reac.P
+                    else:
                         P_core[t+1] = reac.P
                 else:
                     P_core[t+1] = reac.P                
@@ -158,4 +161,4 @@ def print_graph(x1,x2):
     plt.show()
 
 load_following(P_grid)
-print_graph(0, 1900)
+print_graph(0, 1600)
