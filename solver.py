@@ -11,9 +11,10 @@ import matplotlib.pyplot as mplt
 
 eta = 0.33 # Turbine efficiency
 dt = 60 # Time step in seconds
+grad = 5/6000 # Reactor power gradient in %/s
 storage_level = 0.5 # Level of thermal storage system at the start of the simulation
 
-reac = Reactor(345/eta, 200/eta, 0.05, 550, 400) # Reactor initialization
+reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
 sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
 nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
@@ -125,22 +126,24 @@ def load_following(P_grid):
                     stored_energy[t+1] = stored_energy[t] + (MW_to_W(reac.P) - MW_to_W(P_grid[t]))*dt
             
             else:
-                # If the grid level is above what the reactor is outputting we throttle up the reactor    
                 if P_grid[t] <= reac.P_max:
+                    # If the grid level is above what the reactor is outputting and the reactor is below is rated power, we throttle up the reactor    
                     if reac.P < reac.P_max:
+                        # If throttling up the reactor causes it to go beyond the grid requirements, we match the grid
                         if  reac.P+reac.P_grad*reac.P_max >= P_grid[t]:
                             reac.P = P_grid[t]
                             stored_energy[t+1] = stored_energy[t]
                             P_core[t] = reac.P
                             P_core[t+1] = reac.P
-
+                        # If the reactor is near P_max, we match P_max
                         elif reac.P_max - reac.P < reac.P_grad*reac.P_max:
                             reac.P = reac.P_max
                             stored_energy[t+1] = stored_energy[t]
                             P_core[t] = reac.P
                             P_core[t+1] = reac.P
-                        
-                        else:
+                        # Else that means throttling up the reactor does not allow to follow the load. In that case we still throttle it up and we use the
+                        # storage system as a gap filler to match the load:
+                        else :
                             if stored_energy[t] == 0:
                                 P_unload[t] = 0
                             else:
@@ -150,6 +153,7 @@ def load_following(P_grid):
                             P_core[t] = reac.P
                             P_core[t+1] = reac.P
                 
+                # If the load goes beyond the rated power of the reactor, we start unloading the storage system:
                 else:
                     if stored_energy[t] == 0:
                         P_unload[t] = 0
