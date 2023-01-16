@@ -14,7 +14,7 @@ dt = 60 # Time step in seconds
 grad = 5/6000 # Reactor power gradient in %/s
 storage_level = 0.1 # Level of thermal storage system at the start of the simulation
 
-reac = Reactor(345/eta, 345/eta, grad*dt, 550, 400) # Reactor initialization
+reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
 sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
 nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
@@ -92,9 +92,7 @@ def load_following(P_grid):
                 else:
                     reac.P -= reac.P_grad*reac.P_max
                     P_core[t+1] = reac.P
-                
-                
-            
+                 
         # Now we assume the grid demands a higher power than what the reactor is outputting
         else:
             if P_grid[t] <= reac.P_max:
@@ -165,4 +163,4 @@ def print_graph(x1,x2):
     print(stored_energy[-900]/3.6e9)
 
 load_following(P_grid)
-print_graph(0, len(P_grid))
+print_graph(0, len(Time)-1)
