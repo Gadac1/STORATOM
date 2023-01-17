@@ -3,7 +3,7 @@ from csv_to_list import *
 import numpy as np
 import math as m
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as mplt
+import matplotlib.gridspec as gs
 
 # All temps in °C
 # All masses in kg
@@ -33,7 +33,7 @@ P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the sto
 # f= np.concatenate((a,b,c,d,e)) # Test grid load
 # P_grid = np.concatenate((f,f[::-1]*0.9))
 
-P_grid = np.array(enri_80_pic1)*(reac.P_max+P_unload_max)/100
+P_grid = np.array(enri_90_pic1)*(reac.P_max+P_unload_max)/100
 Time = np.zeros(len(P_grid))
 
 P_core = np.zeros(len(P_grid))
@@ -140,29 +140,32 @@ def load_following(P_grid):
 def print_load_graph(x1,x2):
     
     range = (x1,x2)
+    figure, axis = plt.subplots(2, 2)
 
-    plt.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]))
-    plt.xlabel("Time (min)")
-    plt.ylabel("Stored energy (MWh)")
-    plt.gca().set_ylim(-10,2500) 
-    plt.grid()
-    plt.show()
+    axis[0, 0].plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]))
+    axis[0, 0].set_title("Stored energy")
+    axis[0, 0].set_xlabel("Time (min)")
+    axis[0, 0].set_ylabel("Stored energy (MWh)")
+    axis[0, 0].set_ylim(-10,2500) 
+    axis[0, 0].grid()
 
-    plt.plot(Time[range[0]:range[1]:25], P_grid[range[0]:range[1]:25]*eta, 'x', label = "Grid electrical load")
-    plt.plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, label = "Total output power")
-    plt.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level")
-    plt.xlabel("Time (min)")
-    plt.ylabel("Core output power and load from the grid (MW)")
-    plt.legend(loc='best')
-    plt.gca().set_ylim(-10,max(P_grid)*eta+50)
-    plt.grid()
-    plt.show()
+    axis[0, 1].plot(Time[range[0]:range[1]:25], P_grid[range[0]:range[1]:25]*eta, 'x', label = "Grid electrical load")
+    axis[0, 1].plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, label = "Total output power")
+    axis[0, 1].plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level")
+    axis[0, 1].set_title("Load following of reactor and storage system")
+    axis[0, 1].set_xlabel("Time (min)")
+    axis[0, 1].set_ylabel("Power (MW)")
+    axis[0, 1].legend(loc='best')
+    axis[0, 1].set_ylim(-10,max(P_grid)*eta+50)
+    axis[0, 1].grid()
 
-    plt.plot(Time[range[0]:range[1]], (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta)
-    plt.xlabel("Time (min)")
-    plt.ylabel("Storage input power (MW)")
-    plt.gca().set_ylim(-160,350)
-    plt.grid()
+    axis[1, 1].plot(Time[range[0]:range[1]], (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta)
+    axis[1, 1].set_xlabel("Time (min)")
+    axis[1, 1].set_ylabel("Power (MW)")
+    axis[1, 1].set_title("Storage system input load")
+    axis[1, 1].set_ylim(-160,350)
+    axis[1, 1].grid()
+
     plt.show()
 
 def print_physics_graph(x1,x2):
