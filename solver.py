@@ -144,7 +144,7 @@ def print_load_graph(x1,x2):
     gs = gridspec.GridSpec(2,2)
 
     ax1=fig.add_subplot(gs[0,0])
-    ax1.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]),'m', linewidth='3')
+    ax1.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
     ax1.set_title("Stored energy")
     ax1.set_xlabel("Time (min)")
     ax1.set_ylabel("Stored energy (MWh)")
