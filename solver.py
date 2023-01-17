@@ -159,7 +159,7 @@ def print_load_graph(x1,x2):
     ax2.set_xlabel("Time (min)")
     ax2.set_ylabel("Power (MW)")
     ax2.legend(loc='best')
-    ax2.set_ylim(-10,max(P_grid)*eta+50)
+    ax2.set_ylim(-10,max(P_grid)*eta+20)
     ax2.grid()
 
     ax3=fig.add_subplot(gs[0,1])
@@ -167,7 +167,7 @@ def print_load_graph(x1,x2):
     ax3.set_xlabel("Time (min)")
     ax3.set_ylabel("Power (MW)")
     ax3.set_title("Storage system input load")
-    ax3.set_ylim(-160,350)
+    ax3.set_ylim(-170,360)
     ax3.grid()
 
     plt.show()
@@ -179,7 +179,7 @@ def print_load_graph(x1,x2):
     plt.xlabel("Time (min)")
     plt.ylabel("Power (MW)")
     plt.legend(loc='best')
-    plt.ylim(-10,max(P_grid)*eta+50)
+    plt.ylim(-10,max(P_grid)*eta+20)
     plt.gca().grid()
 
     plt.show()
