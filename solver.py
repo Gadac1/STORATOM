@@ -25,7 +25,6 @@ storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tan
 max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
 P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the storage system
 
-
 # a = (np.zeros(200) + 200)/eta
 # b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110,105])/eta
 # c = (np.zeros(890) + 100)/eta
@@ -33,6 +32,7 @@ P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the sto
 # e  = (np.zeros(800) + 390)/eta
 # f= np.concatenate((a,b,c,d,e)) # Test grid load
 # P_grid = np.concatenate((f,f[::-1]*0.9))
+
 P_grid = np.array(enri_80_pic1)*(reac.P_max+P_unload_max)/100
 Time = np.zeros(len(P_grid))
 
@@ -164,8 +164,6 @@ def print_load_graph(x1,x2):
     plt.gca().set_ylim(-160,350)
     plt.grid()
     plt.show()
-
-    print(stored_energy[-900]/3.6e9)
 
 def print_physics_graph(x1,x2):
 

@@ -1,3 +1,0 @@
-import pandas as pd
-
-pd.Series([i  if i else np.nan for i in l]).interpolate().tolist()
