@@ -1,4 +1,5 @@
 from class_definition import *
+from csv_to_list import *
 import numpy as np
 import math as m
 import matplotlib.pyplot as plt
@@ -25,14 +26,14 @@ max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot
 P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the storage system
 
 
-a = (np.zeros(200) + 200)/eta
-b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110,105])/eta
-c = (np.zeros(890) + 100)/eta
-d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380])/eta
-e  = (np.zeros(800) + 390)/eta
-f= np.concatenate((a,b,c,d,e)) # Test grid load
-P_grid = np.concatenate((f,f[::-1]*0.9))
-
+# a = (np.zeros(200) + 200)/eta
+# b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110,105])/eta
+# c = (np.zeros(890) + 100)/eta
+# d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380])/eta
+# e  = (np.zeros(800) + 390)/eta
+# f= np.concatenate((a,b,c,d,e)) # Test grid load
+# P_grid = np.concatenate((f,f[::-1]*0.9))
+P_grid = np.array(enri_80_pic1)*(reac.P_max+P_unload_max)/100
 Time = np.zeros(len(P_grid))
 
 P_core = np.zeros(len(P_grid))
@@ -147,13 +148,13 @@ def print_load_graph(x1,x2):
     plt.grid()
     plt.show()
 
-    plt.plot(Time[range[0]:range[1]], P_grid[range[0]:range[1]]*eta, label = "Grid electrical load")
+    plt.plot(Time[range[0]:range[1]:25], P_grid[range[0]:range[1]:25]*eta, 'x', label = "Grid electrical load")
     plt.plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, label = "Total output power")
     plt.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level")
     plt.xlabel("Time (min)")
     plt.ylabel("Core output power and load from the grid (MW)")
     plt.legend(loc='best')
-    plt.gca().set_ylim(-10,520)
+    plt.gca().set_ylim(-10,max(P_grid)*eta+50)
     plt.grid()
     plt.show()
 
@@ -188,8 +189,6 @@ def print_physics_graph(x1,x2):
     plt.grid()
     plt.show()
 
-
-
 load_following(P_grid)
 
 mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
@@ -200,4 +199,4 @@ V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_h
 V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
 
 print_load_graph(0, len(Time)-1)
-print_physics_graph(0, len(Time)-1)
+# print_physics_graph(0, len(Time)-1)
