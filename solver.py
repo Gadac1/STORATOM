@@ -227,13 +227,19 @@ def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load
 
     plt.show()
 
+def load_factor(P_core):
+    return int(100*(np.average(P_core)*eta)/reactor_max_power)
 
 (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max)  = system_initialize(155, 5.5)
 
-P_grid = np.array(enri_90_pic1)*(reac.P_max+P_unload_max)/100
-results = load_following(P_grid)
-flows = compute_flows(*results)
+P_grid = np.array(enri_50_pic1)*(reac.P_max + P_unload_max)/100
 
-print_load_graph(*results, 0, len(P_grid)-1)
+(Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid)
+
+flows = compute_flows(Time, P_core, P_load, P_unload, stored_energy)
+
+print(load_factor(P_core))
+print_load_graph(Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
+
 # print_flows(*flows, 0, len(P_grid)-1)
 
