@@ -1,64 +1,52 @@
 from class_definition import *
 from csv_to_list import *
-from test_load import *
-
 import numpy as np
 import math as m
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-
 # All temps in °C
 # All masses in kg
-# All powers in MWth for calculations (eta for conversions)
+# All powers in MWth
 # All volumes in m3
 
-######################################################
-##########  Important simulation parameters ##########
-######################################################
-
-dt = 60 # Time step in seconds
 eta = 0.33 # Turbine efficiency
+dt = 60 # Time step in seconds
 grad = 5/6000 # Reactor power gradient in %/s
-reactor_max_power = 345 #MWe
-reactor_init_load_factor = 0.5 # Load factor of the nuclear reactor at the start of the simulation
-reac_T_out = 550 # Reactor secondary outlet temp (°C)
-reac_T_in = 400 # Reactor secondary inlet temp (°C)
-T_stock_hot = 500 # Reactor secondary outlet temp (°C)
-T_stock_cold = 290 # Reactor secondary inlet temp (°C)
-storage_init_level = 0.1 # Level of thermal storage system at the start of the simulation
+storage_level = 0.1 # Level of thermal storage system at the start of the simulation
 
-######################################################
-##########  Initializing working fluids ##############
-######################################################
+reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
+sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
-sodium = Fluid(rho = 927, cp = 1230, k = 84) # Secondary fluid initialization
-nitrate_salt = Fluid(rho = 1772, cp = 1500, k = 0.443) # Storage fluid initialization
+nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
+hot_tank = Tank(15700*3, storage_level*15700*3, nitrate_salt, 500) # Hot tank initialization
+cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, 290) # Cold tank initialization
+storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
+max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
+P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the storage system
 
-def system_initialize(P_unload_max, t_unload_max):
+# a = (np.zeros(200) + 200)/eta
+# b = np.array([200,195,190,185,180,175,170,165,160,155,150,145,140,135,130,125,120,115,110,105])/eta
+# c = (np.zeros(890) + 100)/eta
+# d = np.array([110,120,130,140,150,160,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,380])/eta
+# e  = (np.zeros(800) + 390)/eta
+# f= np.concatenate((a,b,c,d,e)) # Test grid load
+# P_grid = np.concatenate((f,f[::-1]*0.9))
 
-    E_stock = MW_to_W(P_unload_max)*t_unload_max*3600/eta
-    m_salt = E_stock/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
-    V_salt = m_salt/nitrate_salt.rho
 
-    reac = Reactor(reactor_max_power/eta, reactor_init_load_factor*reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
-    hot_tank = Tank(V_salt, storage_init_level*V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
-    cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, T_stock_cold) # Cold tank initialization
-    storage_load_hx = Heat_exchanger(reactor_max_power/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
-    max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
-    P_unload_max = P_unload_max/eta # Parameter setting the maximum discharge rate of the storage system
+P_grid = np.array(enri_90_pic1)*(reac.P_max+P_unload_max)/100
+Time = np.zeros(len(P_grid))
 
-    return (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
+P_core = np.zeros(len(P_grid))
+P_core[0] = reac.P
+P_load = np.zeros(len(P_grid))
+P_unload = np.zeros(len(P_grid))
+
+stored_energy = np.zeros(len(P_grid))
+stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(hot_tank.T_tank - cold_tank.T_tank) # Amount of energy at the start in the thermal storage system
+
 
 def load_following(P_grid):
-
-    Time = np.zeros(len(P_grid))
-    P_core = np.zeros(len(P_grid))
-    P_core[0] = reac.P
-    P_load = np.zeros(len(P_grid))
-    P_unload = np.zeros(len(P_grid))
-    stored_energy = np.zeros(len(P_grid))
-    stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(hot_tank.T_tank - cold_tank.T_tank) # Amount of energy at the start in the thermal storage system
 
     for t in range(len(P_grid)-1): # Iteration over the time range given by the grid input
         Time[t] = t     
@@ -140,19 +128,7 @@ def load_following(P_grid):
                 P_core[t] = reac.P_max
                 P_core[t+1] = reac.P_max
 
-    return (Time, P_core, P_load, P_unload, stored_energy)
-
-def compute_flows(Time, P_core, P_load, P_unload, stored_energy):
-    mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
-    mfr_secondary_storage = MW_to_W(P_load) / (sodium.cp * (reac.T_out - reac.T_in))
-    mfr_storage_load = MW_to_W(P_load) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-    mfr_storage_unload = MW_to_W(P_unload) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-    V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in))
-    V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
-
-    return (Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load, mfr_storage_unload, V_hot_tank, V_cold_tank)
-
-def print_load_graph(Time, P_core, P_load, P_unload, stored_energy, x1, x2):
+def print_load_graph(x1,x2):
 
     range = (x1,x2)
     fig = plt.figure()
@@ -199,9 +175,16 @@ def print_load_graph(Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
     plt.show()
 
-def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load, mfr_storage_unload, V_hot_tank, V_cold_tank, x1,x2):
+def print_physics_graph(x1,x2):
 
     range = (x1,x2)
+
+    mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
+    mfr_secondary_storage = MW_to_W(P_load) / (sodium.cp * (reac.T_out - reac.T_in))
+    mfr_storage_load = MW_to_W(P_load) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
+    mfr_storage_unload = MW_to_W(P_unload) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
+    V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in))
+    V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
 
     fig = plt.figure()
     gs = gridspec.GridSpec(2,2)
@@ -212,7 +195,7 @@ def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load
     ax1.set_title("Stored energy")
     ax1.set_xlabel("Time (min)")
     ax1.set_ylabel("Volume (m3)")
-    ax1.set_ylim(-300,hot_tank.V_max*1.05) 
+    ax1.set_ylim(-100,hot_tank.V_max*1.05) 
     ax1.grid()
 
     ax2=fig.add_subplot(gs[1,:])
@@ -228,13 +211,10 @@ def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load
 
     plt.show()
 
+load_following(P_grid)
 
-(reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max)  = system_initialize(155, 5.5)
 
-P_grid = np.array(enri_90_pic1)*(reac.P_max+P_unload_max)/100
-results = load_following(P_grid)
-flows = compute_flows(*results)
 
-print_load_graph(*results, 0, len(P_grid)-1)
-# print_flows(*flows, 0, len(P_grid)-1)
+print_load_graph(0, len(Time)-1)
+print_physics_graph(0, len(Time)-1)
 
