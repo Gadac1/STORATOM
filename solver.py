@@ -1,5 +1,4 @@
 from class_definition import *
-from csv_to_list import *
 from load_interpolation import * 
 from test_load import P_grid_test
 
@@ -36,7 +35,7 @@ storage_init_level = 0.3 # Level of thermal storage system at the start of the s
 sodium = Fluid(rho = 927, cp = 1230, k = 84) # Secondary fluid initialization
 nitrate_salt = Fluid(rho = 1772, cp = 1500, k = 0.443) # Storage fluid initialization
 
-def system_initialize(P_unload_max, t_unload_max):
+def system_initialize(P_load_max, P_unload_max, t_unload_max):
 
     max_stored_energy = MW_to_W(P_unload_max)*t_unload_max*3600/eta
     m_salt = max_stored_energy/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
@@ -47,7 +46,7 @@ def system_initialize(P_unload_max, t_unload_max):
     storage_load_hx = Heat_exchanger(reactor_max_power/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
     P_unload_max = P_unload_max/eta # Parameter setting the maximum discharge rate of the storage system
 
-    return (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
+    return (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max, P_load_max)
 
 def load_following(P_grid):
 
@@ -158,27 +157,27 @@ def print_load_graph(Time, P_core, P_load, P_unload, stored_energy, x1, x2):
     gs = gridspec.GridSpec(2,2)
 
     ax1=fig.add_subplot(gs[0,0])
-    ax1.plot(Time[range[0]:range[1]], Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
+    ax1.plot(Time[range[0]:range[1]]/60, Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
     ax1.set_title("Stored energy")
-    ax1.set_xlabel("Time (min)")
+    ax1.set_xlabel("Time (h)")
     ax1.set_ylabel("Stored energy (MWh)")
     ax1.set_ylim(-10, 1.05*Joules_to_MWh(max_stored_energy)) 
     ax1.grid()
 
     ax2=fig.add_subplot(gs[1,:])
-    ax2.plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
-    ax2.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
-    ax2.plot(Time[range[0]:range[1]], P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/60, (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/60, P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/60, P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
     ax2.set_title("Load following of reactor and storage system")
-    ax2.set_xlabel("Time (min)")
+    ax2.set_xlabel("Time (h)")
     ax2.set_ylabel("Power (MW)")
     ax2.legend(loc='best')
-    ax2.set_ylim(-10,max(P_grid)*eta*1.05)
+    ax2.set_ylim(-20,max(P_grid)*eta*1.05)
     ax2.grid()
 
     ax3=fig.add_subplot(gs[0,1])
-    ax3.plot(Time[range[0]:range[1]], (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
-    ax3.set_xlabel("Time (min)")
+    ax3.plot(Time[range[0]:range[1]]/60, (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
+    ax3.set_xlabel("Time (h)")
     ax3.set_ylabel("Power (MW)")
     ax3.set_title("Storage system input load")
     ax3.set_ylim(-170,reac.P_max*1.05*eta)
@@ -186,11 +185,11 @@ def print_load_graph(Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
     plt.show()
 
-    plt.plot(Time[range[0]:range[1]], (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
-    plt.plot(Time[range[0]:range[1]], P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
-    plt.plot(Time[range[0]:range[1]], P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
+    plt.plot(Time[range[0]:range[1]]/60, (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
+    plt.plot(Time[range[0]:range[1]]/60, P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
+    plt.plot(Time[range[0]:range[1]]/60, P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
     plt.title("Load following of reactor and storage system")
-    plt.xlabel("Time (min)")
+    plt.xlabel("Time (h)")
     plt.ylabel("Power (MW)")
     plt.legend(loc='best')
     plt.ylim(-10,max(P_grid)*eta*1.05)
@@ -206,21 +205,21 @@ def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load
     gs = gridspec.GridSpec(2,2)
 
     ax1=fig.add_subplot(gs[0,:])
-    ax1.plot(Time[range[0]:range[1]], V_hot_tank[range[0]:range[1]], label = "Hot tank volume")
-    ax1.plot(Time[range[0]:range[1]], V_cold_tank[range[0]:range[1]], label = "Cold tank volume")
+    ax1.plot(Time[range[0]:range[1]]/60, V_hot_tank[range[0]:range[1]], label = "Hot tank volume")
+    ax1.plot(Time[range[0]:range[1]]/60, V_cold_tank[range[0]:range[1]], label = "Cold tank volume")
     ax1.set_title("Stored energy")
-    ax1.set_xlabel("Time (min)")
+    ax1.set_xlabel("Time (h)")
     ax1.set_ylabel("Volume (m3)")
     ax1.set_ylim(-300,hot_tank.V_max*1.05) 
     ax1.grid()
 
     ax2=fig.add_subplot(gs[1,:])
-    ax2.plot(Time[range[0]:range[1]], mfr_secondary_tot[range[0]:range[1]], label = "Secondary circuit mass flow rate")
-    ax2.plot(Time[range[0]:range[1]], mfr_secondary_storage[range[0]:range[1]], label = "Secondary circuit storage branch mass flow rate")
-    ax2.plot(Time[range[0]:range[1]], mfr_storage_load[range[0]:range[1]], label = "Storage input mass flow rate")
-    ax2.plot(Time[range[0]:range[1]], mfr_storage_unload[range[0]:range[1]], label = "Storage output mass flow rate")
+    ax2.plot(Time[range[0]:range[1]]/60, mfr_secondary_tot[range[0]:range[1]], label = "Secondary circuit mass flow rate")
+    ax2.plot(Time[range[0]:range[1]]/60, mfr_secondary_storage[range[0]:range[1]], label = "Secondary circuit storage branch mass flow rate")
+    ax2.plot(Time[range[0]:range[1]]/60, mfr_storage_load[range[0]:range[1]], label = "Storage input mass flow rate")
+    ax2.plot(Time[range[0]:range[1]]/60, mfr_storage_unload[range[0]:range[1]], label = "Storage output mass flow rate")
     ax2.set_title("Mass flow rates of various subsystems")
-    ax2.set_xlabel("Time (min)")
+    ax2.set_xlabel("Time (h)")
     ax2.set_ylabel("Mass flow rates (kg.s)")
     ax2.legend(loc='best')
     ax2.grid()
@@ -234,18 +233,21 @@ def load_factor(P):
     return int(100*(energy_reactor/((reactor_max_power/eta)*len(P_grid)*dt)))
 
 
-(reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max)  = system_initialize(155, 5.5)
-P_grid = np.array(profil_50EnR_pic3)*(reac.P_max + P_unload_max)/100
+(reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max, P_load_max)  = system_initialize(1, 155, 5.5)
+
+# P_grid = P_grid_test
+P_grid = np.array(profil_90EnR_sem_hiver)*(reac.P_max + P_unload_max)/100
 
 (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid)
 flows = compute_flows(Time, P_core, P_load, P_unload, stored_energy)
 
+print('')
 print('Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
 print('Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho/1000)) + 't')
 print('Load factor of reactor: ' + str(load_factor(P_core - P_load)) + '%')
 print('Load factor of reactor with storage: ' + str(load_factor(P_core)) + '%')
+print('')
 
-print_load_graph(Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
-
+# print_load_graph(Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
 # print_flows(*flows, 0, len(P_grid)-1)
 
