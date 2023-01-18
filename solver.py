@@ -45,6 +45,21 @@ P_unload = np.zeros(len(P_grid))
 stored_energy = np.zeros(len(P_grid))
 stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(hot_tank.T_tank - cold_tank.T_tank) # Amount of energy at the start in the thermal storage system
 
+def system_initialize(efficiency, timestep, grad):
+    eta = 0.33 # Turbine efficiency
+    dt = 60 # Time step in seconds
+    grad = 5/6000 # Reactor power gradient in %/s
+    storage_level = 0.1 # Level of thermal storage system at the start of the simulation
+
+    reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
+    sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
+
+    nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
+    hot_tank = Tank(15700*3, storage_level*15700*3, nitrate_salt, 500) # Hot tank initialization
+    cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, 290) # Cold tank initialization
+    storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
+    max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
+    P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the storage system
 
 def load_following(P_grid):
 
