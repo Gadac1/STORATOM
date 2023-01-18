@@ -1,6 +1,6 @@
 from class_definition import *
 from csv_to_list import *
-from test_load import *
+from test_load import P_grid_test
 
 import numpy as np
 import math as m
@@ -37,15 +37,14 @@ nitrate_salt = Fluid(rho = 1772, cp = 1500, k = 0.443) # Storage fluid initializ
 
 def system_initialize(P_unload_max, t_unload_max):
 
-    E_stock = MW_to_W(P_unload_max)*t_unload_max*3600/eta
-    m_salt = E_stock/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
+    max_stored_energy = MW_to_W(P_unload_max)*t_unload_max*3600/eta
+    m_salt = max_stored_energy/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
     V_salt = m_salt/nitrate_salt.rho
 
     reac = Reactor(reactor_max_power/eta, reactor_init_load_factor*reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
     hot_tank = Tank(V_salt, storage_init_level*V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
     cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, T_stock_cold) # Cold tank initialization
     storage_load_hx = Heat_exchanger(reactor_max_power/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
-    max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
     P_unload_max = P_unload_max/eta # Parameter setting the maximum discharge rate of the storage system
 
     return (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
