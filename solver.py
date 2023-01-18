@@ -19,7 +19,7 @@ reac = Reactor(345/eta, 200/eta, grad*dt, 550, 400) # Reactor initialization
 sodium = Fluid(927, 1230, 84) # Secondary fluid initialization
 
 nitrate_salt = Fluid(1772, 1500, 0.443) # Storage fluid initialization
-hot_tank = Tank(15700, storage_level*15700, nitrate_salt, 500) # Hot tank initialization
+hot_tank = Tank(15700*3, storage_level*15700*3, nitrate_salt, 500) # Hot tank initialization
 cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, 290) # Cold tank initialization
 storage_load_hx = Heat_exchanger(345/eta, reac.T_out, reac.T_in, cold_tank.T_tank, hot_tank.T_tank) # Secondary-to-storage heat exchanger initialization
 max_stored_energy = hot_tank.V_max * nitrate_salt.rho * hot_tank.fluid.cp * (hot_tank.T_tank - cold_tank.T_tank) # Computing the maximum storable energy in the storage system
@@ -33,6 +33,7 @@ P_unload_max = 155/eta # Parameter setting the maximum discharge rate of the sto
 # f= np.concatenate((a,b,c,d,e)) # Test grid load
 # P_grid = np.concatenate((f,f[::-1]*0.9))
 
+
 P_grid = np.array(enri_90_pic1)*(reac.P_max+P_unload_max)/100
 Time = np.zeros(len(P_grid))
 
@@ -41,18 +42,8 @@ P_core[0] = reac.P
 P_load = np.zeros(len(P_grid))
 P_unload = np.zeros(len(P_grid))
 
-V_hot_tank = np.zeros(len(P_grid))
-V_hot_tank[0] = hot_tank.V
-V_cold_tank = np.zeros(len(P_grid))
-V_cold_tank[0] = cold_tank.V
-
 stored_energy = np.zeros(len(P_grid))
 stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(hot_tank.T_tank - cold_tank.T_tank) # Amount of energy at the start in the thermal storage system
-
-mfr_secondary_tot = np.zeros(len(P_grid))
-mfr_secondary_storage = np.zeros(len(P_grid))
-mfr_storage_load = np.zeros(len(P_grid))
-mfr_storage_unload = np.zeros(len(P_grid))
 
 
 def load_following(P_grid):
@@ -148,7 +139,7 @@ def print_load_graph(x1,x2):
     ax1.set_title("Stored energy")
     ax1.set_xlabel("Time (min)")
     ax1.set_ylabel("Stored energy (MWh)")
-    ax1.set_ylim(-10,2500) 
+    ax1.set_ylim(-10, 1.05*Joules_to_MWh(max_stored_energy)) 
     ax1.grid()
 
     ax2=fig.add_subplot(gs[1,:])
@@ -159,7 +150,7 @@ def print_load_graph(x1,x2):
     ax2.set_xlabel("Time (min)")
     ax2.set_ylabel("Power (MW)")
     ax2.legend(loc='best')
-    ax2.set_ylim(-10,max(P_grid)*eta+20)
+    ax2.set_ylim(-10,max(P_grid)*eta*1.05)
     ax2.grid()
 
     ax3=fig.add_subplot(gs[0,1])
@@ -167,7 +158,7 @@ def print_load_graph(x1,x2):
     ax3.set_xlabel("Time (min)")
     ax3.set_ylabel("Power (MW)")
     ax3.set_title("Storage system input load")
-    ax3.set_ylim(-170,360)
+    ax3.set_ylim(-170,reac.P_max*1.05*eta)
     ax3.grid()
 
     plt.show()
@@ -179,7 +170,7 @@ def print_load_graph(x1,x2):
     plt.xlabel("Time (min)")
     plt.ylabel("Power (MW)")
     plt.legend(loc='best')
-    plt.ylim(-10,max(P_grid)*eta+20)
+    plt.ylim(-10,max(P_grid)*eta*1.05)
     plt.gca().grid()
 
     plt.show()
@@ -188,33 +179,42 @@ def print_physics_graph(x1,x2):
 
     range = (x1,x2)
 
-    plt.plot(Time[range[0]:range[1]], mfr_secondary_tot[range[0]:range[1]], label = "Secondary circuit mass flow rate")
-    plt.plot(Time[range[0]:range[1]], mfr_secondary_storage[range[0]:range[1]], label = "Secondary circuit storage branch mass flow rate")
-    plt.plot(Time[range[0]:range[1]], mfr_storage_load[range[0]:range[1]], label = "Storage input mass flow rate")
-    plt.plot(Time[range[0]:range[1]], mfr_storage_unload[range[0]:range[1]], label = "Storage output mass flow rate")
-    plt.xlabel("Time (min)")
-    plt.ylabel("Mass flow rates (kg/s)")
-    plt.legend(loc='best')
-    plt.grid()
-    plt.show()
+    mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
+    mfr_secondary_storage = MW_to_W(P_load) / (sodium.cp * (reac.T_out - reac.T_in))
+    mfr_storage_load = MW_to_W(P_load) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
+    mfr_storage_unload = MW_to_W(P_unload) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
+    V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in))
+    V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
 
-    plt.plot(Time[range[0]:range[1]], V_hot_tank[range[0]:range[1]], label = "Hot tank volume")
-    plt.plot(Time[range[0]:range[1]], V_cold_tank[range[0]:range[1]], label = "Cold tank volume")
-    plt.xlabel("Time (min)")
-    plt.ylabel("Volume (m3)")
-    plt.legend(loc='best')
-    plt.grid()
+    fig = plt.figure()
+    gs = gridspec.GridSpec(2,2)
+
+    ax1=fig.add_subplot(gs[0,:])
+    ax1.plot(Time[range[0]:range[1]], V_hot_tank[range[0]:range[1]], label = "Hot tank volume")
+    ax1.plot(Time[range[0]:range[1]], V_cold_tank[range[0]:range[1]], label = "Cold tank volume")
+    ax1.set_title("Stored energy")
+    ax1.set_xlabel("Time (min)")
+    ax1.set_ylabel("Volume (m3)")
+    ax1.set_ylim(-100,hot_tank.V_max*1.05) 
+    ax1.grid()
+
+    ax2=fig.add_subplot(gs[1,:])
+    ax2.plot(Time[range[0]:range[1]], mfr_secondary_tot[range[0]:range[1]], label = "Secondary circuit mass flow rate")
+    ax2.plot(Time[range[0]:range[1]], mfr_secondary_storage[range[0]:range[1]], label = "Secondary circuit storage branch mass flow rate")
+    ax2.plot(Time[range[0]:range[1]], mfr_storage_load[range[0]:range[1]], label = "Storage input mass flow rate")
+    ax2.plot(Time[range[0]:range[1]], mfr_storage_unload[range[0]:range[1]], label = "Storage output mass flow rate")
+    ax2.set_title("Mass flow rates of various subsystems")
+    ax2.set_xlabel("Time (min)")
+    ax2.set_ylabel("Mass flow rates (kg.s)")
+    ax2.legend(loc='best')
+    ax2.grid()
+
     plt.show()
 
 load_following(P_grid)
 
-mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
-mfr_secondary_storage = MW_to_W(P_load) / (sodium.cp * (reac.T_out - reac.T_in))
-mfr_storage_load = MW_to_W(P_load) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-mfr_storage_unload = MW_to_W(P_unload) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in))
-V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
+
 
 print_load_graph(0, len(Time)-1)
-# print_physics_graph(0, len(Time)-1)
+print_physics_graph(0, len(Time)-1)
 
