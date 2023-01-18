@@ -236,8 +236,7 @@ def load_factor(P):
 (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max, P_load_max)  = system_initialize(1, 155, 5.5)
 
 # P_grid = P_grid_test
-P_grid = np.array(profil_90EnR_sem_hiver)*(reac.P_max + P_unload_max)/100
-
+P_grid = np.array(profil_80EnR_sem_hiver)*(reac.P_max + P_unload_max)/100
 (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid)
 flows = compute_flows(Time, P_core, P_load, P_unload, stored_energy)
 
