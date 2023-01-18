@@ -232,7 +232,7 @@ def load_factor(P_core):
 
 (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max)  = system_initialize(155, 5.5)
 
-P_grid = np.array(enri_50_pic1)*(reac.P_max + P_unload_max)/100
+P_grid = np.array(enri_90_pic1)*(reac.P_max + P_unload_max)/100
 
 (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid)
 
