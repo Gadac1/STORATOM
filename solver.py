@@ -1,5 +1,6 @@
 from class_definition import *
 from csv_to_list import *
+from load_interpolation import * 
 from test_load import P_grid_test
 
 import numpy as np
@@ -26,7 +27,7 @@ reac_T_out = 550 # Reactor secondary outlet temp (°C)
 reac_T_in = 400 # Reactor secondary inlet temp (°C)
 T_stock_hot = 500 # Reactor secondary outlet temp (°C)
 T_stock_cold = 290 # Reactor secondary inlet temp (°C)
-storage_init_level = 0.1 # Level of thermal storage system at the start of the simulation
+storage_init_level = 0.3 # Level of thermal storage system at the start of the simulation
 
 ######################################################
 ##########  Initializing working fluids ##############
@@ -40,7 +41,6 @@ def system_initialize(P_unload_max, t_unload_max):
     max_stored_energy = MW_to_W(P_unload_max)*t_unload_max*3600/eta
     m_salt = max_stored_energy/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
     V_salt = m_salt/nitrate_salt.rho
-
     reac = Reactor(reactor_max_power/eta, reactor_init_load_factor*reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
     hot_tank = Tank(V_salt, storage_init_level*V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
     cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, T_stock_cold) # Cold tank initialization
@@ -228,15 +228,20 @@ def print_flows(Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load
     plt.show()
 
 def load_factor(P):
-    return int(100*(np.average(P)*eta)/reactor_max_power)
+    energy_reactor = 0
+    for p in P:
+        energy_reactor += p*dt
+    return int(100*(energy_reactor/((reactor_max_power/eta)*len(P_grid)*dt)))
 
 
 (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy , P_unload_max)  = system_initialize(155, 5.5)
-P_grid = np.array(enri_50_pic1)*(reac.P_max + P_unload_max)/100
+P_grid = np.array(profil_50EnR_pic3)*(reac.P_max + P_unload_max)/100
 
 (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid)
 flows = compute_flows(Time, P_core, P_load, P_unload, stored_energy)
 
+print('Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
+print('Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho/1000)) + 't')
 print('Load factor of reactor: ' + str(load_factor(P_core - P_load)) + '%')
 print('Load factor of reactor with storage: ' + str(load_factor(P_core)) + '%')
 
