@@ -3,7 +3,6 @@ import pandas as pd
 def interpolation(profil) :
 
     df = pd.read_excel(profil) # can also index sheet by name or fetch all sheets
-    print(df)
     donnees = df['Puissance'].tolist()
 
     n = len(donnees)
