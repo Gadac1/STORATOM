@@ -6,9 +6,8 @@ import math as m
 # All volumes in m3
 
 class Reactor: 
-    def __init__(self, P_max, P, P_grad, T_out, T_in):
+    def __init__(self, P_max, P_grad, T_out, T_in):
         self.P_max = P_max
-        self.P = P
         self.P_grad = P_grad
         self.T_out = T_out
         self.T_in = T_in
@@ -20,14 +19,10 @@ class Fluid:
         self.k = k
 
 class Tank:
-    def __init__(self, V_max, V, fluid, T_tank):
+    def __init__(self, V_max, fluid, T_tank):
         self.V_max = V_max
-        self.V = V
         self.fluid = fluid
         self.T_tank = T_tank
-
-    def fluid_mass(self): 
-        return self.V*self.fluid.rho
 
 
 class Heat_exchanger:

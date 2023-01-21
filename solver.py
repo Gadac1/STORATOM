@@ -39,14 +39,14 @@ def system_initialize(reactor_max_power, t_unload_max):
     max_stored_energy = MW_to_W(system_max_power - reactor_max_power)*t_unload_max*3600/eta
     m_salt = max_stored_energy/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
     V_salt = m_salt/nitrate_salt.rho
-    reac = Reactor(reactor_max_power/eta, reactor_init_load_factor*reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
-    hot_tank = Tank(V_salt, storage_init_level*V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
-    cold_tank = Tank(hot_tank.V_max, hot_tank.V_max - hot_tank.V, nitrate_salt, T_stock_cold) # Cold tank initialization
+    reac = Reactor(reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
+    hot_tank = Tank(V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
+    cold_tank = Tank(hot_tank.V_max, nitrate_salt, T_stock_cold) # Cold tank initialization
     P_unload_max = (system_max_power - reactor_max_power)/eta # Parameter setting the maximum discharge rate of the storage system
 
     return (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)
 
-def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unload_max):
+def load_following(P_grid, reac, max_stored_energy, P_unload_max):
 
     Time = np.zeros(len(P_grid))
     P_core = np.zeros(len(P_grid))
@@ -55,14 +55,14 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
     P_load = np.zeros(len(P_grid))
     P_unload = np.zeros(len(P_grid))
     stored_energy = np.zeros(len(P_grid))
-    stored_energy[0] = hot_tank.fluid_mass()*hot_tank.fluid.cp*(hot_tank.T_tank - cold_tank.T_tank) # Amount of energy at the start in the thermal storage system
+    stored_energy[0] =  storage_init_level*max_stored_energy# Amount of energy at the start in the thermal storage system
 
     for t in range(len(P_grid)-1): # Iteration over the time range given by the grid input
         Time[t] = t     
         # We first study the case were the reactor output is above the demand by the electrical grid
         if P_grid[t] <= P_core[t]:
             #We compute the time for the reactor to match the grid power level (could be <0):
-            t_reac_grid = (P_core[t]-P_grid[t])/(grad*dt*reac.P_max) 
+            t_reac_grid = (P_core[t]-P_grid[t])/(reac.P_grad*reac.P_max) 
             # We then compute the amount of energy that would still be irremediably stored by the reactor if it were to start matching the grid demand
             # We can now check if the storage system would be saturated by this energy if we did not reduce the output of the reactor power now:
             
@@ -72,12 +72,12 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
                 stored_energy[t+1] = stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt
                 # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient
                 if P_core[t] < reac.P_max:
-                    if reac.P_max - P_core[t] < grad*dt*reac.P_max and stored_energy[t+1] + (MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt*(1/reac.P_grad)/2 < max_stored_energy - 1*(MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt:
+                    if reac.P_max - P_core[t] < reac.P_grad*reac.P_max and stored_energy[t+1] + (MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt*(1/reac.P_grad)/2 < max_stored_energy - 1*(MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt:
                         P_core[t+1] = reac.P_max
                     #Using the same criteria as before we check if increasing the reactor load is possible and will not saturate the storage
                     elif stored_energy[t+1] + (MW_to_W(reac.P+reac.P_grad*reac.P_max) - MW_to_W(P_grid[t]))*dt*(t_reac_grid + 1)/2 < max_stored_energy - 1*(MW_to_W(reac.P+reac.P_grad*reac.P_max) - MW_to_W(P_grid[t]))*dt:
                         reac.P += grad*reac.P_max
-                        P_core[t+1] = P_core[t] + grad*dt*reac.P_max
+                        P_core[t+1] = P_core[t] + reac.P_grad*reac.P_max
                     else:
                         P_core[t+1] = P_core[t]
                 else:
@@ -89,10 +89,10 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
                 P_load[t] = P_core[t] - P_grid[t]
                 stored_energy[t+1] = stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt
                 # We then start reducing our power level
-                if P_core[t]-grad*dt*reac.P_max <= P_grid[t]:
+                if P_core[t]-reac.P_grad*reac.P_max <= P_grid[t]:
                     P_core[t+1] = P_grid[t]
                 else:
-                    P_core[t+1] = P_core[t] - grad*dt*reac.P_max
+                    P_core[t+1] = P_core[t] - reac.P_grad*reac.P_max
                  
         # Now we assume the grid demands a higher power than what the reactor is outputting
         else:
@@ -100,13 +100,13 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
                 # If the grid level is above what the reactor is outputting and the reactor is below is rated power, we throttle up the reactor    
                 if P_core[t] < reac.P_max:
                     # If throttling up the reactor causes it to go beyond the grid requirements, we match the grid
-                    if  P_core[t]+grad*dt*reac.P_max >= P_grid[t]:
+                    if  P_core[t]+reac.P_grad*reac.P_max >= P_grid[t]:
                         P_core[t] = P_grid[t]
                         P_core[t+1] = P_core[t]
                         stored_energy[t+1] = stored_energy[t]
                         
                     # If the reactor is near P_max, we match P_max
-                    elif reac.P_max - P_core[t] < grad*dt*reac.P_max:
+                    elif reac.P_max - P_core[t] < reac.P_grad*reac.P_max:
                         P_core[t] = reac.P_max
                         P_core[t+1] = P_core[t]
                         stored_energy[t+1] = stored_energy[t]
@@ -114,7 +114,7 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
                     # Else that means throttling up the reactor does not allow to follow the load. In that case we still throttle it up and we use the
                     # storage system as a gap filler to match the load:
                     else :
-                        P_core[t] += grad*dt*reac.P_max
+                        P_core[t] += reac.P_grad*reac.P_max
                         P_core[t+1] = P_core[t]
                         if stored_energy[t] == 0:
                             P_unload[t] = 0
@@ -122,7 +122,6 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
                             P_unload[t] = min(P_grid[t] - P_core[t], P_unload_max) # Storage system serving as stopgap for rapid load following
                         stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
                         
-                
             # If the load goes beyond the rated power of the reactor, we start unloading the storage system:
             else:
                 if stored_energy[t] == 0:
@@ -135,8 +134,7 @@ def load_following(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unloa
 
     return (Time, P_core, P_load, P_unload, stored_energy)
 
-
-def print_load_graph(P_grid, reac, hot_tank, cold_tank, max_stored_energy, P_unload_max, Time, P_core, P_load, P_unload, stored_energy, x1, x2):
+def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
     range = (x1,x2)
     fig = plt.figure()
