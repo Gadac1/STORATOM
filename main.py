@@ -3,6 +3,7 @@ from load_interpolation import *
 from class_definition import *
 import numpy as np
 import matplotlib.pyplot as plt    
+import inquirer
 from matplotlib.ticker import StrMethodFormatter
 
 
@@ -109,6 +110,53 @@ def storage_time_study(profile):
     ax3.grid()
     plt.show()
 
-storage_time_study(profil_80EnR_sem_hiver)
+def interface():
+    print('')
+    questions = [
+    inquirer.List('Penetration rate',
+                    message="Input VRE penetration rate: ",
+                    choices=['50', '80', '90'],),]
+    answers = inquirer.prompt(questions)
+    rate = int(answers["Penetration rate"])
+    print('')
+    questions = [
+    inquirer.List('Season',
+                    message="Input season: ",
+                    choices=['Winter', 'Summer'],),]
+    answers = inquirer.prompt(questions)
+    season = str(answers["Season"])
+    print('')
 
-# run(150, 11.5, profil_90EnR_sem_hiver)
+    if season == 'Winter':
+        if rate == 50:
+            profile = profil_50EnR_sem_winter
+        elif rate == 80:
+            profile = profil_80EnR_sem_winter
+        else:
+            profile = profil_90EnR_sem_winter
+    else:
+        if rate == 50:
+            profile = profil_50EnR_sem_sum
+        elif rate == 80:
+            profile = profil_80EnR_sem_sum
+        else:
+            profile = profil_90EnR_sem_sum
+
+    questions = [
+    inquirer.List('Study',
+                    message="Do you wish to simulate a specific system or perform a parametric study ?",
+                    choices=['Specific system', 'Parametric study'],),]
+    answers = inquirer.prompt(questions)
+
+    if answers["Study"] == 'Specific system':
+        print('')
+        print('Input reactor nominal power in MWe: ')
+        np = int(input())
+        print('')
+        print('Input storage duration: ')
+        storage = float(input())
+        run(np, storage, profile)
+    else:
+        storage_time_study(profile)
+
+interface()

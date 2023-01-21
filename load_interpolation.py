@@ -18,13 +18,13 @@ def interpolation(profil) :
     return donnees_interpo
 
 
-profil_90EnR_sem_ete = interpolation('Profils/DonnéesPDI-90_EnR_sem_ete.xlsx')
-profil_80EnR_sem_ete = interpolation('Profils/DonnéesPDI-80_EnR_sem_ete.xlsx')
-profil_50EnR_sem_ete = interpolation('Profils/DonnéesPDI-50_EnR_sem_ete.xlsx')
+profil_90EnR_sem_sum = interpolation('Profils/DonnéesPDI-90_EnR_sem_ete.xlsx')
+profil_80EnR_sem_sum = interpolation('Profils/DonnéesPDI-80_EnR_sem_ete.xlsx')
+profil_50EnR_sem_sum = interpolation('Profils/DonnéesPDI-50_EnR_sem_ete.xlsx')
 
-profil_50EnR_sem_hiver = interpolation('Profils/DonnéesPDI-50_EnR_sem_hiver.xlsx')
-profil_90EnR_sem_hiver = interpolation('Profils/DonnéesPDI-90_EnR_sem_hiver.xlsx')
-profil_80EnR_sem_hiver = interpolation('Profils/DonnéesPDI-80_EnR_sem_hiver.xlsx')
+profil_50EnR_sem_winter = interpolation('Profils/DonnéesPDI-50_EnR_sem_hiver.xlsx')
+profil_90EnR_sem_winter = interpolation('Profils/DonnéesPDI-90_EnR_sem_hiver.xlsx')
+profil_80EnR_sem_winter = interpolation('Profils/DonnéesPDI-80_EnR_sem_hiver.xlsx')
 
 
 # df = pd.read_excel('Profils/profil_50_pic1.xlsx', sheet_name='Feuil1') # can also index sheet by name or fetch all sheets
