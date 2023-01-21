@@ -1,15 +1,16 @@
 from solver import *
 from load_interpolation import *
+from test_load import *
 import numpy as np
 import matplotlib.pyplot as plt    
 from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 
 
 
-def run(PN_reac, storage_time):
+def run(PN_reac, storage_time, profile):
 
     (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, storage_time)
-    P_grid = np.array(profil_80EnR_sem_hiver)*(system_max_power/eta)/100
+    P_grid = np.array(profile)*(system_max_power/eta)/100
     (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
 
     print('')
@@ -108,4 +109,6 @@ def storage_time_study(profile):
     ax3.grid()
     plt.show()
 
-# storage_time_study(profil_90EnR_sem_hiver)
+# storage_time_study(profil_80EnR_sem_hiver)
+
+run(125, 16, profil_80EnR_sem_hiver)

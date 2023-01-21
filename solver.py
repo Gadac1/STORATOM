@@ -26,7 +26,7 @@ reac_T_out = 550 # Reactor secondary outlet temp (°C)
 reac_T_in = 400 # Reactor secondary inlet temp (°C)
 T_stock_hot = 500 # Reactor secondary outlet temp (°C)
 T_stock_cold = 290 # Reactor secondary inlet temp (°C)
-storage_init_level = 0.8 # Level of thermal storage system at the start of the simulation
+storage_init_level = 1 # Level of thermal storage system at the start of the simulation
 
 ######################################################
 ##########  Initializing working fluids ##############
@@ -52,7 +52,8 @@ def load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_store
 
     Time = np.zeros(len(P_grid))
     P_core = np.zeros(len(P_grid))
-    P_core[0] = reac.P
+    reac.P = min(reac.P_max, P_grid[0])
+    P_core[0] = min(reac.P_max, P_grid[0])
     P_load = np.zeros(len(P_grid))
     P_unload = np.zeros(len(P_grid))
     stored_energy = np.zeros(len(P_grid))
