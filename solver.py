@@ -1,6 +1,5 @@
 from class_definition import *
 from load_interpolation import * 
-from test_load import P_grid_test
 
 import numpy as np
 import math as m

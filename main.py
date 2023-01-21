@@ -1,6 +1,5 @@
 from solver import *
 from load_interpolation import *
-from test_load import *
 import numpy as np
 import matplotlib.pyplot as plt    
 from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
