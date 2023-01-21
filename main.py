@@ -1,6 +1,10 @@
 from solver import *
 from load_interpolation import *
 import numpy as np
+import matplotlib.pyplot as plt    
+from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
+
+
 
 def run(PN_reac, storage_time):
 
@@ -23,13 +27,85 @@ def run(PN_reac, storage_time):
 
     print_load_graph(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max, Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
 
-def storage_time_study(PN_reac):
+def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in hours to mach the grid
     c = 0
     eq = False
     while eq == False: 
-        c+=1
+        c+=0.5
         (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, c)
-        P_grid = np.array(profil_80EnR_sem_hiver)*(system_max_power/eta)/100
+        P_grid = np.array(profile)*(system_max_power/eta)/100
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
         eq = grid_equilibrium(P_grid, P_core, P_unload)
-    return c
+    
+    kp = load_factor(P_grid, P_core, reac)
+    m_salt = int(hot_tank.V_max*nitrate_salt.rho/1000)
+
+    return c, kp, m_salt
+
+def storage_time_study(profile):
+    capacity = []
+    nominal_power = []
+    kp = []
+    salt_mass = []
+
+    for P in range(25,500,25):
+        print('Studying ' + str(P) + 'MW reactor...')
+        (c,k,mass) = min_storage_time(P, profile)
+        capacity.append(c)
+        kp.append(k)
+        salt_mass.append(mass)
+        nominal_power.append(P)
+
+    print('')
+    print('Done !')
+    print('Displaying results...')
+
+    fig = plt.figure()
+    gs = gridspec.GridSpec(2,2)
+
+    ax1=fig.add_subplot(gs[0,0])
+    ax1.plot(nominal_power,capacity, 'k.', label = 'Storage capacity in hours')
+    ax1.set_title('Minimum storage capacity in hours to match grid requirements')
+    plt.ylabel('Storage capacity (h)')
+    plt.xlabel('Reactor nominal power')
+    ax1.set_xticks(np.arange(0, max(nominal_power), 50))
+    ax1.set_yticks(np.arange(0, max(capacity), 5))
+    ax1.grid(which='major', color='#DDDDDD', linewidth=1)
+    ax1.grid()
+    ax1.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax1.minorticks_on()
+    ax1.grid()
+
+
+    ax2=fig.add_subplot(gs[0,1])
+    ax2.plot(nominal_power,salt_mass, 'k.', label = 'Storage capacity in salt mass')
+    ax2.set_title('Minimum storage capacity in salt mass to match grid requirements')
+    ax2.yaxis.set_major_formatter(StrMethodFormatter('{x:,}'))
+    ax2.yaxis.tick_right()
+    ax2.yaxis.set_label_position("right")
+    ax2.set_xticks(np.arange(0, max(nominal_power), 50))
+    ax2.set_yticks(np.arange(0, max(salt_mass), 50000))
+    plt.ylabel('Salt mass (t)')
+    plt.xlabel('Reactor nominal power')
+    ax2.grid(which='major', color='#DDDDDD', linewidth=1)
+    ax2.grid()
+    ax2.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax2.minorticks_on()
+    ax2.grid()
+
+    ax3=fig.add_subplot(gs[1,:])
+    ax3.plot(nominal_power, kp, 'k.', label = 'Capacity factor at minimal storage requirements')
+    ax3.set_title('Capacity factor at minimal storage requirement')
+    ax3.yaxis.set_major_formatter(StrMethodFormatter('{x:,}'))
+    ax3.set_xticks(np.arange(0, max(nominal_power), 50))
+    ax3.set_yticks(np.arange(0, 105, 5))
+    plt.ylabel('Capacity factor (%)')
+    plt.xlabel('Reactor nominal power')
+    ax3.grid(which='major', color='#DDDDDD', linewidth=1)
+    ax3.grid()
+    ax3.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax3.minorticks_on()
+    ax3.grid()
+    plt.show()
+
+# storage_time_study(profil_90EnR_sem_hiver)

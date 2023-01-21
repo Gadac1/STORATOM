@@ -21,7 +21,7 @@ dt = 60 # Time step in seconds
 eta = 0.33 # Turbine efficiency
 grad = 5/6000 # Reactor power gradient in %/s
 system_max_power = 500 #MWe
-reactor_init_load_factor = 0.5 # Load factor of the nuclear reactor at the start of the simulation
+reactor_init_load_factor = 1 # Load factor of the nuclear reactor at the start of the simulation
 reac_T_out = 550 # Reactor secondary outlet temp (°C)
 reac_T_in = 400 # Reactor secondary inlet temp (°C)
 T_stock_hot = 500 # Reactor secondary outlet temp (°C)
@@ -156,32 +156,44 @@ def print_load_graph(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_sto
     gs = gridspec.GridSpec(2,2)
 
     ax1=fig.add_subplot(gs[0,0])
-    ax1.plot(Time[range[0]:range[1]]/60, Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
+    ax1.plot(Time[range[0]:range[1]]/1440, Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
     ax1.set_title("Stored energy")
-    ax1.set_xlabel("Time (h)")
+    ax1.set_xlabel("Time (Days)")
     ax1.set_ylabel("Stored energy (MWh)")
     ax1.set_ylim(-0.05*max(Joules_to_MWh(stored_energy)), 1.05*Joules_to_MWh(max_stored_energy)) 
+    ax1.grid(which='major', color='#DDDDDD', linewidth=1)
+    ax1.grid()
+    ax1.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax1.minorticks_on()
     ax1.grid()
 
+
     ax2=fig.add_subplot(gs[1,:])
-    ax2.plot(Time[range[0]:range[1]]/60, (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
-    ax2.plot(Time[range[0]:range[1]]/60, P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
-    ax2.plot(Time[range[0]:range[1]]/60, P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/1440, (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/1440, P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
+    ax2.plot(Time[range[0]:range[1]]/1440, P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
     ax2.set_title("Load following of reactor and storage system")
-    ax2.set_xlabel("Time (h)")
+    ax2.set_xlabel("Time (Days)")
     ax2.set_ylabel("Power (MW)")
     ax2.legend(loc='best')
     ax2.set_ylim(-20,max(P_grid)*eta*1.05)
+    ax2.grid(which='major', color='#DDDDDD', linewidth=1)
+    ax2.grid()
+    ax2.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax2.minorticks_on()
     ax2.grid()
 
     ax3=fig.add_subplot(gs[0,1])
-    ax3.plot(Time[range[0]:range[1]]/60, (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
+    ax3.plot(Time[range[0]:range[1]]/1440, (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
     ax3.set_xlabel("Time (h)")
     ax3.set_ylabel("Power (MW)")
     ax3.set_title("Storage system input load")
     ax3.set_ylim(-(system_max_power - reac.P_max*eta),reac.P_max*1.05*eta)
+    ax3.grid(which='major', color='#DDDDDD', linewidth=1)
     ax3.grid()
-
+    ax3.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    ax3.minorticks_on()
+    ax3.grid()
     plt.show()
 
 def load_factor(P_grid, P_core, reac):
