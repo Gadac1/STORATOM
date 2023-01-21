@@ -17,7 +17,6 @@ def plot_tank_temperature(T_initial, m, c, h, A_tank, T_ambient, Q_in_values):
   time_steps = len(Q_in_values)
   time = np.linspace(0, time_steps, time_steps)  
   temperatures = np.empty(time_steps)
-  heat_deficit = np.empty(time_steps)
   # Calculate temperature of tank at each time step
   for i in range(time_steps):
     Q_in = Q_in_values[i]

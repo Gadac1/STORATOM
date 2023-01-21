@@ -3,7 +3,7 @@ from load_interpolation import *
 from class_definition import *
 import numpy as np
 import matplotlib.pyplot as plt    
-from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
+from matplotlib.ticker import StrMethodFormatter
 
 
 
@@ -22,7 +22,7 @@ def run(PN_reac, storage_time, profile):
     print('Results :')
     print('     Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
     print('     Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho/1000)) + 't')
-    print('     Load factor of reactor with storage: ' + str(load_factor(P_grid, P_core, reac)) + '%')
+    print('     Load factor of reactor with storage: ' + str(load_factor(P_core, reac)) + '%')
     print('     Consumption-Production equilibrium: ' + str(grid_equilibrium(P_grid, P_core, P_unload)))
     print('')
 
@@ -38,7 +38,7 @@ def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in h
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
         eq = grid_equilibrium(P_grid, P_core, P_unload)
     
-    kp = load_factor(P_grid, P_core, reac)
+    kp = load_factor(P_core, reac)
     m_salt = int(hot_tank.V_max*nitrate_salt.rho/1000)
 
     return c, kp, m_salt
@@ -109,6 +109,6 @@ def storage_time_study(profile):
     ax3.grid()
     plt.show()
 
-# storage_time_study(profil_80EnR_sem_hiver)
+storage_time_study(profil_80EnR_sem_hiver)
 
-# run(345, 5.5, profil_80EnR_sem_hiver)
+# run(150, 11.5, profil_90EnR_sem_hiver)

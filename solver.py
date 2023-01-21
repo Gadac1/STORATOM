@@ -181,11 +181,11 @@ def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_un
     ax3.grid()
     plt.show()
 
-def load_factor(P_grid, P_core, reac):
+def load_factor(P_core, reac):
     energy_reactor = 0
     for p in P_core:
         energy_reactor += p*dt
-    return int(100*(energy_reactor/((reac.P_max)*len(P_grid)*dt)))
+    return int(100*(energy_reactor/((reac.P_max)*len(P_core)*dt)))
 
 def grid_equilibrium(P_grid, P_core, P_unload):
     eq = P_core + P_unload >= P_grid
