@@ -140,14 +140,6 @@ def load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_store
 
     return (Time, P_core, P_load, P_unload, stored_energy)
 
-    mfr_secondary_tot = MW_to_W(P_core) / (sodium.cp * (reac.T_out - reac.T_in))
-    mfr_secondary_storage = MW_to_W(P_load) / (sodium.cp * (reac.T_out - reac.T_in))
-    mfr_storage_load = MW_to_W(P_load) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-    mfr_storage_unload = MW_to_W(P_unload) / (nitrate_salt.cp * (hot_tank.T_tank - cold_tank.T_tank))
-    V_hot_tank = stored_energy/(hot_tank.fluid.rho*hot_tank.fluid.cp*(storage_load_hx.T_cold_out - storage_load_hx.T_cold_in))
-    V_cold_tank = (np.zeros(len(V_hot_tank))+cold_tank.V_max) - V_hot_tank
-
-    return (Time, mfr_secondary_tot, mfr_secondary_storage, mfr_storage_load, mfr_storage_unload, V_hot_tank, V_cold_tank)
 
 def print_load_graph(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max, Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
