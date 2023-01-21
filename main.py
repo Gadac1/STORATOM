@@ -1,5 +1,6 @@
 from solver import *
 from load_interpolation import *
+from class_definition import *
 import numpy as np
 import matplotlib.pyplot as plt    
 from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
@@ -8,9 +9,9 @@ from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 
 def run(PN_reac, storage_time, profile):
 
-    (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, storage_time)
+    (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, storage_time)
     P_grid = np.array(profile)*(system_max_power/eta)/100
-    (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
+    (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
 
     print('')
     print('Case study :')
@@ -25,16 +26,16 @@ def run(PN_reac, storage_time, profile):
     print('     Consumption-Production equilibrium: ' + str(grid_equilibrium(P_grid, P_core, P_unload)))
     print('')
 
-    print_load_graph(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max, Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
+    print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
 
 def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in hours to mach the grid
     c = 0
     eq = False
     while eq == False: 
         c+=0.5
-        (reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, c)
+        (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, c)
         P_grid = np.array(profile)*(system_max_power/eta)/100
-        (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, hot_tank, cold_tank, storage_load_hx, max_stored_energy, P_unload_max)
+        (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
         eq = grid_equilibrium(P_grid, P_core, P_unload)
     
     kp = load_factor(P_grid, P_core, reac)
@@ -110,4 +111,4 @@ def storage_time_study(profile):
 
 # storage_time_study(profil_80EnR_sem_hiver)
 
-run(125, 16, profil_80EnR_sem_hiver)
+# run(345, 5.5, profil_80EnR_sem_hiver)
