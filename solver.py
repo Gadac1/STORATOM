@@ -1,5 +1,6 @@
 from class_definition import *
 from load_interpolation import * 
+from interface import *
 
 import numpy as np
 import math as m
@@ -17,15 +18,15 @@ import matplotlib.gridspec as gridspec
 ######################################################
 
 dt = 60 # Time step in seconds
-eta = 0.33 # Turbine efficiency
 grad = 5/6000 # Reactor power gradient in %/s
-system_max_power = 500 #MWe
-reactor_init_load_factor = 1 # Load factor of the nuclear reactor at the start of the simulation
-reac_T_out = 550 # Reactor secondary outlet temp (°C)
-reac_T_in = 400 # Reactor secondary inlet temp (°C)
-T_stock_hot = 500 # Reactor secondary outlet temp (°C)
-T_stock_cold = 290 # Reactor secondary inlet temp (°C)
-storage_init_level = 1 # Level of thermal storage system at the start of the simulation
+
+# eta = 0.33 # Turbine efficiency
+# system_max_power = 500 #MWe
+# reac_T_out = 550 # Reactor secondary outlet temp (°C)
+# reac_T_in = 400 # Reactor secondary inlet temp (°C)
+# T_stock_hot = 500 # Reactor secondary outlet temp (°C)
+# T_stock_cold = 290 # Reactor secondary inlet temp (°C)
+# storage_init_level = 1 # Level of thermal storage system at the start of the simulation
 
 ######################################################
 ##########  Initializing working fluids ##############

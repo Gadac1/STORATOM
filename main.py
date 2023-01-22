@@ -8,7 +8,7 @@ from matplotlib.ticker import StrMethodFormatter
 
 
 
-def run(PN_reac, storage_time, profile):
+def run(PN_reac, storage_time, profile): #Simple run function for single storage experiment
 
     (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, storage_time)
     P_grid = np.array(profile)*(system_max_power/eta)/100
@@ -39,9 +39,8 @@ def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in h
         P_grid = np.array(profile)*(system_max_power/eta)/100
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
         eq = grid_equilibrium(P_grid, P_core, P_unload)
-    
     kp = load_factor(P_core, reac)
-    m_salt = int(hot_tank.V_max*nitrate_salt.rho/1000)
+    m_salt = int(hot_tank.V_max*nitrate_salt.rho(T_stock_hot)/1000)
 
     return c, kp, m_salt
 
@@ -112,21 +111,6 @@ def storage_time_study(profile):
     plt.show()
 
 def interface():
-    print('')
-    questions = [
-    inquirer.List('Penetration rate',
-                    message="Input VRE penetration rate: ",
-                    choices=['50', '80', '90'],),]
-    answers = inquirer.prompt(questions)
-    rate = int(answers["Penetration rate"])
-    print('')
-    questions = [
-    inquirer.List('Season',
-                    message="Input season: ",
-                    choices=['Winter', 'Summer'],),]
-    answers = inquirer.prompt(questions)
-    season = str(answers["Season"])
-    print('')
 
     if season == 'Winter':
         if rate == 50:
@@ -143,23 +127,12 @@ def interface():
         else:
             profile = profil_90EnR_sem_sum
 
-    questions = [
-    inquirer.List('Study',
-                    message="Do you wish to simulate a specific system or perform a parametric study ?",
-                    choices=['Specific system', 'Parametric study'],),]
-    answers = inquirer.prompt(questions)
-
-    if answers["Study"] == 'Specific system':
-        print('')
-        print('Input reactor nominal power in MWe: ')
-        np = int(input())
-        print('')
-        print('Input storage duration: ')
-        storage = float(input())
-        run(np, storage, profile)
+    if study == 'Single system':
+        run(reactor_power, storage_duration, profile)
     else:
         storage_time_study(profile)
 
-# interface()
+interface()
 
-run(345,5.5,profil_80EnR_sem_winter)
+# run(345,5.5,profil_80EnR_sem_winter)
+# storage_time_study(profil_80EnR_sem_sum)
