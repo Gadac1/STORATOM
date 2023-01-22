@@ -46,37 +46,46 @@ eta_label = tk.Label(root, text="   Thermoelectrical conversion efficiency  ", f
 eta_label.grid(row=1, column=0)
 eta_entry = tk.Entry(root)
 eta_entry.grid(row=1, column=1)
+eta_entry.insert(0, "0.33")
 
 sys_max_label = tk.Label(root, text="System max power (MWe)", font=font_option)
 sys_max_label.grid(row=2, column=0)
 sys_max_entry = tk.Entry(root)
 sys_max_entry.grid(row=2, column=1)
+sys_max_entry.insert(0, "500")
+
 
 reac_T_out_label = tk.Label(root, text="Reactor outlet temperature (°C)", font=font_option)
 reac_T_out_label.grid(row=3, column=0)
 reac_T_out_entry = tk.Entry(root)
 reac_T_out_entry.grid(row=3, column=1)
+reac_T_out_entry.insert(0, "550")
 
 reac_T_in_label = tk.Label(root, text="Reactor inlet temperature (°C)", font=font_option)
 reac_T_in_label.grid(row=4, column=0)
 reac_T_in_entry = tk.Entry(root)
 reac_T_in_entry.grid(row=4, column=1)
+reac_T_in_entry.insert(0, "400")
+
 
 T_hot_label = tk.Label(root, text="Hot storage temperature (°C)", font=font_option)
 T_hot_label.grid(row=5, column=0)
 T_hot_entry = tk.Entry(root)
 T_hot_entry.grid(row=5, column=1)
+T_hot_entry.insert(0, "500")
+
 
 T_cold_label = tk.Label(root, text="Cold storage temperature (°C)", font=font_option)
 T_cold_label.grid(row=6, column=0)
 T_cold_entry = tk.Entry(root)
 T_cold_entry.grid(row=6, column=1)
+T_cold_entry.insert(0, "290")
 
-storage_level_label = tk.Label(root, text="Storage Initial Level", font=font_option)
+storage_level_label = tk.Label(root, text="Storage Initial Level (0-1)", font=font_option)
 storage_level_label.grid(row=7, column=0)
 storage_level_entry = tk.Entry(root)
 storage_level_entry.grid(row=7, column=1)
-
+storage_level_entry.insert(0, "1")
 
 # Create Combobox for season selection
 rate_label = tk.Label(root, text="  VRE penetration rate  ", font=font_option)
