@@ -22,7 +22,8 @@ def run(PN_reac, storage_time, profile):
     print('')
     print('Results :')
     print('     Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
-    print('     Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho/1000)) + 't')
+    print('     Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho(hot_tank.T_tank)/1000)) + 't')
+    print('     Hot salt volume: ' + str(int(hot_tank.V_max)) + 'm3')
     print('     Load factor of reactor with storage: ' + str(load_factor(P_core, reac)) + '%')
     print('     Consumption-Production equilibrium: ' + str(grid_equilibrium(P_grid, P_core, P_unload)))
     print('')
@@ -159,4 +160,6 @@ def interface():
     else:
         storage_time_study(profile)
 
-interface()
+# interface()
+
+run(345,5.5,profil_80EnR_sem_winter)
