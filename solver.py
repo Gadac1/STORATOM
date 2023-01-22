@@ -32,13 +32,13 @@ storage_init_level = 1 # Level of thermal storage system at the start of the sim
 ######################################################
 
 sodium = Fluid(rho = 927, cp = 1230, k = 84) # Secondary fluid initialization
-nitrate_salt = Fluid(rho = 1772, cp = 1500, k = 0.443) # Storage fluid initialization
+nitrate_salt = Fluid(rho = lambda T : 2090 - 0.636*T, cp = lambda T : 1443 + 0.172*T, k = 0.443) # Storage fluid initialization
 
 def system_initialize(reactor_max_power, t_unload_max):
 
     max_stored_energy = MW_to_W(system_max_power - reactor_max_power)*t_unload_max*3600/eta
-    m_salt = max_stored_energy/(nitrate_salt.cp*(T_stock_hot-T_stock_cold))
-    V_salt = m_salt/nitrate_salt.rho
+    m_salt = max_stored_energy/(nitrate_salt.cp(T_stock_hot)*T_stock_hot-nitrate_salt.cp(T_stock_cold)*T_stock_cold)
+    V_salt = m_salt/nitrate_salt.rho(T_stock_hot)
     reac = Reactor(reactor_max_power/eta, grad*dt, reac_T_out, reac_T_in) # Reactor initialization
     hot_tank = Tank(V_salt, nitrate_salt, T_stock_hot) # Hot tank initialization
     cold_tank = Tank(hot_tank.V_max, nitrate_salt, T_stock_cold) # Cold tank initialization
