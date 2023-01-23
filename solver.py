@@ -32,8 +32,8 @@ storage_init_level = 1 # Level of thermal storage system at the start of the sim
 ##########  Initializing working fluids ##############
 ######################################################
 
-sodium = Fluid(rho = lambda T : 1014 - 0.235*(273+T), cp = lambda T : -3.001e6*(273+T)**(-2) + 1658 - 0.8479*(273+T) +4.454e-4*(273+T)**2, k = 84) # Secondary fluid initialization
-nitrate_salt = Fluid(rho = lambda T : 2090 - 0.636*T, cp = lambda T : 1443 + 0.172*T, k = 0.443) # Storage fluid initialization
+sodium = Fluid(rho = lambda T : 1014 - 0.235*(273+T), cp = lambda T : -3.001e6*(273+T)**(-2) + 1658 - 0.8479*(273+T) +4.454e-4*(273+T)**2, k = lambda T : 104-0.047*(T+273), mu = lambda T : m.exp(556.835/(273+T) - 0.3958*m.log(273+T) - 6.4406)) # Secondary fluid initialization
+nitrate_salt = Fluid(rho = lambda T : 2090 - 0.636*T, cp = lambda T : 1443 + 0.172*T, k = lambda T :  0.443 - 1.9e-4 * T, mu = lambda T : (22.714 - 0.120 * T + 2.281e-4 * T**2 - 1.474e-7 * T**3)*1e-3) # Storage fluid initialization
 
 def system_initialize(reactor_max_power, t_unload_max):
 
@@ -143,6 +143,17 @@ def compute_flows(P_core, P_load, P_unload, stored_energy):
     
 
     return(primary_flow, load_flow, unload_flow)
+
+def Nu_h(fluid, flow, Di, f, T):
+
+    velocity = flow/ (fluid.rho(T) * (np.pi/4)*Di**2)
+    Re = velocity*Di*fluid.rho(T)/fluid.mu(T)
+    Pr = fluid.cp(T)*fluid.mu(T)/fluid.k(T)
+
+    Nu = (f/8)*(Re - 1000)*Pr/(1 + 12.7*m.sqrt(f/8)*(Pr**(2/3) - 1))
+    h = Nu*fluid.k(T) / Di
+
+    return (Nu,h)
 
 
 def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, x1, x2):

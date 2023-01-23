@@ -13,10 +13,11 @@ class Reactor:
         self.T_in = T_in
 
 class Fluid:
-    def __init__(self, rho, cp, k):
+    def __init__(self, rho, cp, k, mu):
         self.rho = rho
         self.cp = cp
         self.k = k
+        self.mu = mu
 
 class Tank:
     def __init__(self, V_max, fluid, T_tank):
