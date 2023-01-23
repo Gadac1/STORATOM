@@ -1,6 +1,6 @@
 from class_definition import *
 from load_interpolation import * 
-from interface import *
+# from interface import *
 
 import numpy as np
 import math as m
@@ -20,13 +20,13 @@ import matplotlib.gridspec as gridspec
 dt = 60 # Time step in seconds
 grad = 5/6000 # Reactor power gradient in %/s
 
-# eta = 0.33 # Turbine efficiency
-# system_max_power = 500 #MWe
-# reac_T_out = 550 # Reactor secondary outlet temp (°C)
-# reac_T_in = 400 # Reactor secondary inlet temp (°C)
-# T_stock_hot = 500 # Reactor secondary outlet temp (°C)
-# T_stock_cold = 290 # Reactor secondary inlet temp (°C)
-# storage_init_level = 1 # Level of thermal storage system at the start of the simulation
+eta = 0.33 # Turbine efficiency
+system_max_power = 500 #MWe
+reac_T_out = 550 # Reactor secondary outlet temp (°C)
+reac_T_in = 400 # Reactor secondary inlet temp (°C)
+T_stock_hot = 500 # Reactor secondary outlet temp (°C)
+T_stock_cold = 290 # Reactor secondary inlet temp (°C)
+storage_init_level = 1 # Level of thermal storage system at the start of the simulation
 
 ######################################################
 ##########  Initializing working fluids ##############
@@ -135,6 +135,14 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
 
     return (Time, P_core, P_load, P_unload, stored_energy)
 
+def compute_flows(P_core, P_load, P_unload, stored_energy):
+
+    primary_flow = MW_to_W(P_core) / (sodium.cp * (reac_T_out - reac_T_in))
+    load_flow = MW_to_W(P_core) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
+    unload_flow = MW_to_W(P_unload) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
+
+    return(primary_flow, load_flow, unload_flow)
+
 def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
     range = (x1,x2)
@@ -180,6 +188,25 @@ def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_un
     ax3.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
     ax3.minorticks_on()
     ax3.grid()
+    plt.show()
+
+def print_flows(Time, primary_flow, load_flow, unload_flow, x1, x2):
+
+    range = (x1,x2)
+    plt.plot(Time[range[0]:range[1]]/1440, primary_flow[range[0]:range[1]], 'r', label = "Primary flow", linewidth='3')
+    plt.plot(Time[range[0]:range[1]]/1440, load_flow[range[0]:range[1]], label = "Load loop flow", linewidth='3')
+    plt.plot(Time[range[0]:range[1]]/1440, unload_flow[range[0]:range[1]], 'y--', label = "Unload loop flow", linewidth='3')
+    plt.title("Computed flows in each fluid loops")
+    plt.xlabel("Time (Days)")
+    plt.ylabel("Mass flow rate (kg/s)")
+    plt.legend(loc='best')
+    plt.ylim(-20,max(max(primary_flow), max(load_flow), max(unload_flow))*1.05)
+    plt.grid(which='major', color='#DDDDDD', linewidth=1)
+    plt.grid()
+    plt.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    plt.minorticks_on()
+    plt.grid()
+
     plt.show()
 
 def load_factor(P_core, reac):
