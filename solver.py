@@ -32,7 +32,7 @@ storage_init_level = 1 # Level of thermal storage system at the start of the sim
 ##########  Initializing working fluids ##############
 ######################################################
 
-sodium = Fluid(rho = 927, cp = 1230, k = 84) # Secondary fluid initialization
+sodium = Fluid(rho = lambda T : 1014 - 0.235*(273+T), cp = lambda T : -3.001e6*(273+T)**(-2) + 1658 - 0.8479*(273+T) +4.454e-4*(273+T)**2, k = 84) # Secondary fluid initialization
 nitrate_salt = Fluid(rho = lambda T : 2090 - 0.636*T, cp = lambda T : 1443 + 0.172*T, k = 0.443) # Storage fluid initialization
 
 def system_initialize(reactor_max_power, t_unload_max):
@@ -137,11 +137,13 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
 
 def compute_flows(P_core, P_load, P_unload, stored_energy):
 
-    primary_flow = MW_to_W(P_core) / (sodium.cp * (reac_T_out - reac_T_in))
+    primary_flow = MW_to_W(P_core) / (sodium.cp((reac_T_out + reac_T_in)/2) * (reac_T_out - reac_T_in))
     load_flow = MW_to_W(P_core) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
     unload_flow = MW_to_W(P_unload) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
+    
 
     return(primary_flow, load_flow, unload_flow)
+
 
 def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, x1, x2):
 
