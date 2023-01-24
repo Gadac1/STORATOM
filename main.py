@@ -3,7 +3,6 @@ from load_interpolation import *
 from class_definition import *
 import numpy as np
 import matplotlib.pyplot as plt    
-import inquirer
 from matplotlib.ticker import StrMethodFormatter
 
 
@@ -14,7 +13,7 @@ def run(PN_reac, storage_time, profile): #Simple run function for single storage
     P_grid = np.array(profile)*(system_max_power/eta)/100
     (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
     (primary_flow, load_flow, unload_flow) = compute_flows(P_core, P_load, P_unload, stored_energy)
-
+    
     print()
     print('Case study :')
     print('     Reactor nominal power: ' + str(PN_reac) + 'MWe')
@@ -134,7 +133,7 @@ def interface():
     else:
         storage_time_study(profile)
 
-# interface()
+interface()
 
-run(345,5.5,profil_80EnR_sem_winter)
+# run(345,5.5,profil_80EnR_sem_winter)
 # storage_time_study(profil_80EnR_sem_sum)
