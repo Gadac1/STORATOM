@@ -155,9 +155,9 @@ def Nu_h_Gnielinski(fluid, flow, Di, f, T):
 
     return (Pr, Re,Nu,h)
 
-def Nu_h_Cheng_Tak(fluid, flow, Di, f, T):
+def Nu_h_Cheng_Tak(fluid, flow, Di, n, T):
 
-    velocity = flow / (fluid.rho(T) * (np.pi/4)*Di**2)
+    velocity = (flow/n) / (fluid.rho(T) * (np.pi/4)*Di**2)
     Re = velocity*Di*fluid.rho(T)/fluid.mu(T)
     Pr = fluid.cp(T)*fluid.mu(T)/fluid.k(T)
 
