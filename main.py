@@ -119,14 +119,14 @@ def interface():
         elif rate == 80:
             profile = profil_80EnR_sem_winter
         else:
-            profile = profil_90EnR_sem_winter
+            profile = profil_90EnR_winter
     else:
         if rate == 50:
             profile = profil_50EnR_sem_sum
         elif rate == 80:
             profile = profil_80EnR_sem_sum
         else:
-            profile = profil_90EnR_sem_sum
+            profile = profil_90EnR_sum
 
     if study == 'Single system':
         run(reactor_power, storage_duration, profile)
