@@ -17,10 +17,13 @@ def plot_tank_temperature(T_initial, m, c, h, A_tank, T_ambient, Q_in_values):
   time_steps = len(Q_in_values)
   time = np.linspace(0, time_steps, time_steps)  
   temperatures = np.empty(time_steps)
+  P_out = np.zeros(time_steps)
+
   # Calculate temperature of tank at each time step
   for i in range(time_steps):
     Q_in = Q_in_values[i]
     Q_out = h * A_tank * (T_tank - T_ambient)
+    P_out[i] = Q_out
     delta_T = (Q_in - Q_out) * 60 / (m * c)
     T_tank += delta_T
     temperatures[i] = T_tank
@@ -31,8 +34,12 @@ def plot_tank_temperature(T_initial, m, c, h, A_tank, T_ambient, Q_in_values):
   plt.ylabel("Temperature (°C)")
   plt.show()
 
+  plt.plot(time/1440, P_out/1e6)
+  plt.xlabel("Time (days)")
+  plt.ylabel("P (MW)")
+  plt.show()
 
 # Test
 Q_in = np.zeros(144000)
-plot_tank_temperature(550,6300e6,1443,4000,1000,20,Q_in)
+plot_tank_temperature(550,6300e6,1443,400,1000,20,Q_in)
 

@@ -42,8 +42,13 @@ profil_50EnR_sem_winter = interpolation('Profils/DataPDI-50_EnR_sem_hiver.xlsx')
 profil_90EnR_sem_winter = interpolation('Profils/DataPDI-90_EnR_sem_hiver.xlsx')
 profil_80EnR_sem_winter = interpolation('Profils/DataPDI-80_EnR_sem_hiver.xlsx')
 
-# profil_90EnR_winter = interpolation_csv('Profils/DataPDI-90_EnR_hiver.csv')
-# profil_90EnR_sum = interpolation_csv('Profils/DataPDI-90_EnR_ete.csv')
+profil_50EnR_sum = interpolation('Profils/DonnéesPDI-50_EnR-SaisonEte.xlsx')
+profil_80EnR_sum = interpolation('Profils/DonnéesPDI-80_EnR-SaisonEte.xlsx')
+profil_90EnR_sum = interpolation('Profils/DonnéesPDI-90_EnR-SaisonEte.xlsx')
+
+profil_50EnR_winter = interpolation('Profils/DonnéesPDI-50_EnR-SaisonHiver.xlsx')
+profil_80EnR_winter = interpolation('Profils/DonnéesPDI-80_EnR-SaisonHiver.xlsx')
+profil_90EnR_winter = interpolation('Profils/DonnéesPDI-90_EnR-SaisonHiver.xlsx')
 
 # df = pd.read_excel('Profils/profil_50_pic1.xlsx', sheet_name='Feuil1') # can also index sheet by name or fetch all sheets
 # enri_50_pic1 = df[0].tolist()

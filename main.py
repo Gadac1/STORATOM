@@ -24,7 +24,8 @@ def run(PN_reac, storage_time, profile): #Simple run function for single storage
     print('     Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
     print('     Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho(hot_tank.T_tank)/1000)) + 't')
     print('     Hot salt volume: ' + str(int(hot_tank.V_max)) + 'm3')
-    print('     Load factor of reactor with storage: ' + str(load_factor(P_core, reac)) + '%')
+    print('     Load factor of reactor with storage: ' + str(load_factor(P_grid*eta, system_max_power)) + '%')
+    print('     Load factor of equivalent reactor without storage: ' + str(load_factor(P_core, reac.P_max)) + '%')
     print('     Consumption-Production equilibrium: ' + str(grid_equilibrium(P_grid, P_core, P_unload)))
     print()
 
@@ -40,7 +41,8 @@ def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in h
         P_grid = np.array(profile)*(system_max_power/eta)/100
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
         eq = grid_equilibrium(P_grid, P_core, P_unload)
-    kp = load_factor(P_core, reac)
+
+    kp = load_factor(P_core, reac.P_max)
     m_salt = int(hot_tank.V_max*nitrate_salt.rho(T_stock_hot)/1000)
 
     return c, kp, m_salt
@@ -115,18 +117,32 @@ def interface():
 
     if season == 'Winter':
         if rate == 50:
+            profile = profil_50EnR_winter
+        elif rate == 80:
+            profile = profil_80EnR_winter
+        else:
+            profile = profil_90EnR_winter
+    elif season == 'Summer':
+        if rate == 50:
+            profile = profil_90EnR_sum
+        elif rate == 80:
+            profile = profil_90EnR_sum
+        else:
+            profile = profil_90EnR_sum
+    elif season == 'Winter week':
+        if rate == 50:
             profile = profil_50EnR_sem_winter
         elif rate == 80:
             profile = profil_80EnR_sem_winter
         else:
-            profile = profil_90EnR_winter
+            profile = profil_90EnR_sem_winter
     else:
         if rate == 50:
             profile = profil_50EnR_sem_sum
         elif rate == 80:
             profile = profil_80EnR_sem_sum
         else:
-            profile = profil_90EnR_sum
+            profile = profil_90EnR_sem_sum
 
     if study == 'Single system':
         run(reactor_power, storage_duration, profile)
@@ -137,3 +153,7 @@ interface()
 
 # run(345,5.5,profil_80EnR_sem_winter)
 # storage_time_study(profil_80EnR_sem_sum)
+
+# print(min_storage_time(200, profil_80EnR_sem_winter))
+
+# run(200, 8, profil_80EnR_sem_winter)

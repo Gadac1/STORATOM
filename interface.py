@@ -99,7 +99,7 @@ season_label = tk.Label(root, text="    Season  ", font=font_option)
 season_label.grid(row=2, column=3)
 season_var = tk.StringVar()
 season_combobox = ttk.Combobox(root, textvariable=season_var, state='readonly')
-season_combobox['values'] = ('Winter', 'Summer')
+season_combobox['values'] = ('Winter week', 'Winter', 'Summer week', 'Summer')
 season_combobox.grid(row=2, column=4)
 
 study_label = tk.Label(root, text="    Type of study  ", font=font_option)

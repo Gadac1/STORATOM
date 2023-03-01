@@ -20,7 +20,7 @@ import matplotlib.gridspec as gridspec
 dt = 60 # Time step in seconds
 grad = 5/6000 # Reactor power gradient in %/s
 
-# eta = 0.33 # Turbine efficiency
+# eta = 0.44 # Turbine efficiency
 # system_max_power = 500 #MWe
 # reac_T_out = 550 # Reactor secondary outlet temp (°C)
 # reac_T_in = 400 # Reactor secondary inlet temp (°C)
@@ -234,17 +234,17 @@ def print_flows(Time, primary_flow, load_flow, unload_flow, x1, x2):
 
     plt.show()
 
-def load_factor(P_core, reac):
+def load_factor(P_core, max_pow):
     energy_reactor = 0
     for p in P_core:
         energy_reactor += p*dt
-    return int(100*(energy_reactor/((reac.P_max)*len(P_core)*dt)))
+    return int(100*(energy_reactor/((max_pow)*len(P_core)*dt)))
 
 def grid_equilibrium(P_grid, P_core, P_unload):
-    eq = P_core + P_unload >= P_grid
-    if False in eq:
-        return False 
-    else:
-        return True
+    eq = np.rint((P_core + P_unload - P_grid)).astype(int)
+    for i in eq:
+        if i<0:
+            return False 
+    return True
 
 
