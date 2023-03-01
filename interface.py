@@ -36,7 +36,7 @@ def on_study_select(*args):
         storage_duration_entry.grid_forget()
 
 root = tk.Tk()
-root.title("Simulation parameters")
+root.title("STORATOM ⚛")
 font_option = ('Calibri', 14)
 
 # title_label = tk.Label(root, text="Simulation parameters", font=('Calibri', 24))
@@ -46,7 +46,7 @@ eta_label = tk.Label(root, text="   Thermoelectrical conversion efficiency  ", f
 eta_label.grid(row=1, column=0)
 eta_entry = tk.Entry(root)
 eta_entry.grid(row=1, column=1)
-eta_entry.insert(0, "0.33")
+eta_entry.insert(0, "0.41")
 
 sys_max_label = tk.Label(root, text="System max power (MWe)", font=font_option)
 sys_max_label.grid(row=2, column=0)

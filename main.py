@@ -24,11 +24,16 @@ def run(PN_reac, storage_time, profile): #Simple run function for single storage
     print('     Storage capacity: ' + str(int(Joules_to_MWh(max_stored_energy))) + 'MWh')
     print('     Mass of nitrate salt: ' + str(int(hot_tank.V_max*nitrate_salt.rho(hot_tank.T_tank)/1000)) + 't')
     print('     Hot salt volume: ' + str(int(hot_tank.V_max)) + 'm3')
-    print('     Load factor of reactor with storage: ' + str(load_factor(P_grid*eta, system_max_power)) + '%')
-    print('     Load factor of equivalent reactor without storage: ' + str(load_factor(P_core, reac.P_max)) + '%')
-    print('     Consumption-Production equilibrium: ' + str(grid_equilibrium(P_grid, P_core, P_unload)))
+    print('     Load factor of reactor with storage: ' + str(load_factor(P_core, reac.P_max)) + '%')
+    print('     Load factor of equivalent reactor without storage: ' + str(load_factor(P_grid*eta, system_max_power)) + '%')
+    eq, c = grid_equilibrium(P_grid, P_core, P_unload)
+    print('     Consumption-Production equilibrium: ' + str(eq))
+    if eq == False:
+        print('Failed hours: ' + str(int(c/60)) + 'h / ' + str(100*c/len(P_grid)) + "%")
     print()
 
+    # eq = np.rint((P_core + P_unload - P_grid)).astype(int)
+    # print(eq)
     print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
     print_flows(Time, primary_flow, load_flow, unload_flow, 0, len(P_grid)-1) 
 
@@ -36,11 +41,12 @@ def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in h
     c = 0
     eq = False
     while eq == False: 
-        c+=0.5
+        c+=1
         (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, c)
         P_grid = np.array(profile)*(system_max_power/eta)/100
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
-        eq = grid_equilibrium(P_grid, P_core, P_unload)
+        eq,a = grid_equilibrium(P_grid, P_core, P_unload)
+        print(c)
 
     kp = load_factor(P_core, reac.P_max)
     m_salt = int(hot_tank.V_max*nitrate_salt.rho(T_stock_hot)/1000)
@@ -53,7 +59,7 @@ def storage_time_study(profile):
     kp = []
     salt_mass = []
 
-    for P in range(25,500,25):
+    for P in range(50,500,25):
         print('Studying ' + str(P) + 'MW reactor...')
         (c,k,mass) = min_storage_time(P, profile)
         capacity.append(c)
@@ -148,10 +154,11 @@ def interface():
         run(reactor_power, storage_duration, profile)
     else:
         storage_time_study(profile)
+        print("Parametric")
 
 interface()
 
-# run(345,5.5,profil_80EnR_sem_winter)
+# run(150,12,profil_80EnR_winter)
 # storage_time_study(profil_80EnR_sem_sum)
 
 # print(min_storage_time(200, profil_80EnR_sem_winter))

@@ -70,7 +70,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
             if stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt*t_reac_grid/2 < max_stored_energy - 1*(MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt:
                 # In that case we can store the difference of the reactor output and the grid demand over this step in the storage system
                 P_load[t] = reac.P - P_grid[t]
-                stored_energy[t+1] = stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt
+                stored_energy[t+1] = min(stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt, max_stored_energy)
                 # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient
                 if P_core[t] < reac.P_max:
                     if reac.P_max - P_core[t] < reac.P_grad*reac.P_max and stored_energy[t+1] + (MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt*(1/reac.P_grad)/2 < max_stored_energy - 1*(MW_to_W(reac.P_max) - MW_to_W(P_grid[t]))*dt:
@@ -88,7 +88,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
             else:
                 # We add the energy produced at this time step by the power output of the reactor to the energy level of the next step:
                 P_load[t] = P_core[t] - P_grid[t]
-                stored_energy[t+1] = stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt
+                stored_energy[t+1] = min(stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt, max_stored_energy)
                 # We then start reducing our power level
                 if P_core[t]-reac.P_grad*reac.P_max <= P_grid[t]:
                     P_core[t+1] = P_grid[t]
@@ -241,10 +241,13 @@ def load_factor(P_core, max_pow):
     return int(100*(energy_reactor/((max_pow)*len(P_core)*dt)))
 
 def grid_equilibrium(P_grid, P_core, P_unload):
-    eq = np.rint((P_core + P_unload - P_grid)).astype(int)
+    eq = np.rint((P_core[:-1] + P_unload[:-1] - P_grid[:-1])).astype(int)
+    eq_boolean = True
+    c = 0
     for i in eq:
         if i<0:
-            return False 
-    return True
+            c+=1
+            eq_boolean = False 
+    return eq_boolean,c
 
 
