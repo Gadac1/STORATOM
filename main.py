@@ -29,7 +29,7 @@ def run(PN_reac, storage_time, profile): #Simple run function for single storage
     eq, c = grid_equilibrium(P_grid, P_core, P_unload)
     print('     Consumption-Production equilibrium: ' + str(eq))
     if eq == False:
-        print('Failed hours: ' + str(int(c/60)) + 'h / ' + str(100*c/len(P_grid)) + "%")
+        print('Failed hours: ' + str(int(c/60)) + 'h / ' + str(int((100*c/len(P_grid))*10)/10) + "%")
     print()
 
     # eq = np.rint((P_core + P_unload - P_grid)).astype(int)
@@ -37,33 +37,38 @@ def run(PN_reac, storage_time, profile): #Simple run function for single storage
     print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_unload, stored_energy, 0, len(P_grid)-1)
     print_flows(Time, primary_flow, load_flow, unload_flow, 0, len(P_grid)-1) 
 
-def min_storage_time(PN_reac, profile): # Computes minimum storage capacity in hours to mach the grid
+def min_storage_time(PN_reac, profile, couverture): # Computes minimum storage capacity in hours to mach the grid
     c = 0
     eq = False
-    while eq == False: 
+    couv = 0
+    while couv < couverture: 
         c+=1
         (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, c)
         P_grid = np.array(profile)*(system_max_power/eta)/100
         (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
-        eq,a = grid_equilibrium(P_grid, P_core, P_unload)
-        print(c)
+        eq,couv = grid_equilibrium(P_grid, P_core, P_unload)
+        couv = 100 - int((100*couv/len(P_grid))*10)/10
+        print(str(c) + 'h')
 
     kp = load_factor(P_core, reac.P_max)
+    kp_without = load_factor(P_grid*eta, system_max_power)
     m_salt = int(hot_tank.V_max*nitrate_salt.rho(T_stock_hot)/1000)
 
-    return c, kp, m_salt
+    return c, kp, kp_without, m_salt
 
-def storage_time_study(profile):
+def storage_time_study(profile, sys_max_pow):
     capacity = []
     nominal_power = []
     kp = []
+    kp_without = []
     salt_mass = []
 
-    for P in range(50,500,25):
+    for P in range(50,int(sys_max_pow),25):
         print('Studying ' + str(P) + 'MW reactor...')
-        (c,k,mass) = min_storage_time(P, profile)
+        (c,k,k_w, mass) = min_storage_time(P, profile,couverture)
         capacity.append(c)
         kp.append(k)
+        kp_without.append(k_w)
         salt_mass.append(mass)
         nominal_power.append(P)
 
@@ -106,6 +111,7 @@ def storage_time_study(profile):
 
     ax3=fig.add_subplot(gs[1,:])
     ax3.plot(nominal_power, kp, 'k.', label = 'Capacity factor at minimal storage requirements')
+    ax3.plot(nominal_power, kp_without, 'r.', label = 'Capacity factor of equivalent reactor without storages')
     ax3.set_title('Capacity factor at minimal storage requirement')
     ax3.yaxis.set_major_formatter(StrMethodFormatter('{x:,}'))
     ax3.set_xticks(np.arange(0, max(nominal_power), 50))
@@ -153,7 +159,7 @@ def interface():
     if study == 'Single system':
         run(reactor_power, storage_duration, profile)
     else:
-        storage_time_study(profile)
+        storage_time_study(profile, system_max_power)
         print("Parametric")
 
 interface()

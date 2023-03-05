@@ -4,7 +4,7 @@ from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
 def save_values():
-    global eta, system_max_power, reactor_init_load_factor, reac_T_out, reac_T_in, T_stock_hot, T_stock_cold, storage_init_level, season, rate, study, reactor_power, storage_duration
+    global eta, system_max_power, reactor_init_load_factor, reac_T_out, reac_T_in, T_stock_hot, T_stock_cold, storage_init_level, season, rate, study, reactor_power, storage_duration, couverture
     eta = float(eta_entry.get())
     system_max_power = float(sys_max_entry.get())
     reac_T_out = float(reac_T_out_entry.get())
@@ -20,6 +20,8 @@ def save_values():
         reactor_power = float(reactor_power_entry.get())
         storage_duration = float(storage_duration_entry.get())
 
+    else:
+        couverture = float(couverture_entry.get())
 
     root.destroy()
 
@@ -29,7 +31,13 @@ def on_study_select(*args):
         reactor_power_entry.grid(row=4, column=4)
         storage_duration_label.grid(row=5, column=3)
         storage_duration_entry.grid(row=5, column=4)
+
+        couverture_label.grid_forget()
+        couverture_entry.grid_forget()
     else:
+        couverture_label.grid(row=4, column=3)
+        couverture_entry.grid(row=4, column=4)
+
         reactor_power_label.grid_forget()
         reactor_power_entry.grid_forget()
         storage_duration_label.grid_forget()
@@ -115,6 +123,9 @@ reactor_power_entry = tk.Entry(root)
 
 storage_duration_label = tk.Label(root, text="Storage Duration", font=font_option)
 storage_duration_entry = tk.Entry(root)
+
+couverture_label = tk.Label(root, text="Couverture", font=font_option)
+couverture_entry = tk.Entry(root)
 
 study_var.trace("w", on_study_select)
 
