@@ -124,7 +124,7 @@ reactor_power_entry = tk.Entry(root)
 storage_duration_label = tk.Label(root, text="Storage Duration", font=font_option)
 storage_duration_entry = tk.Entry(root)
 
-couverture_label = tk.Label(root, text="Couverture", font=font_option)
+couverture_label = tk.Label(root, text="Coverage", font=font_option)
 couverture_entry = tk.Entry(root)
 
 study_var.trace("w", on_study_select)
