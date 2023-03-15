@@ -69,7 +69,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
             
             if stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt*t_reac_grid/2 < max_stored_energy - 1*(MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt:
                 # In that case we can store the difference of the reactor output and the grid demand over this step in the storage system
-                P_load[t] = reac.P - P_grid[t]
+                P_load[t] = abs(reac.P - P_grid[t])
                 stored_energy[t+1] = min(stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt, max_stored_energy)
                 # If the reactor can be throttled up, in that case we increase the power level by the allowable power gradient
                 if P_core[t] < reac.P_max:
@@ -87,7 +87,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
             # If the previous condition lead to the saturation of the thermal storage, we start throttling back the reactor to the grid power requirement now:
             else:
                 # We add the energy produced at this time step by the power output of the reactor to the energy level of the next step:
-                P_load[t] = P_core[t] - P_grid[t]
+                P_load[t] = abs(P_core[t] - P_grid[t])
                 stored_energy[t+1] = min(stored_energy[t] + (MW_to_W(P_core[t]) - MW_to_W(P_grid[t]))*dt, max_stored_energy)
                 # We then start reducing our power level
                 if P_core[t]-reac.P_grad*reac.P_max <= P_grid[t]:
@@ -120,7 +120,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
                         if stored_energy[t] == 0:
                             P_unload[t] = 0
                         else:
-                            P_unload[t] = min(P_grid[t] - P_core[t], P_unload_max) # Storage system serving as stopgap for rapid load following
+                            P_unload[t] = min(abs(P_grid[t] - P_core[t]), P_unload_max) # Storage system serving as stopgap for rapid load following
                         stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
                         
             # If the load goes beyond the rated power of the reactor, we start unloading the storage system:
@@ -128,7 +128,7 @@ def load_following(P_grid, reac, max_stored_energy, P_unload_max):
                 if stored_energy[t] == 0:
                     P_unload[t] = 0
                 else:
-                    P_unload[t] = min(P_grid[t] - reac.P_max, P_unload_max)
+                    P_unload[t] = min(abs(P_grid[t] - reac.P_max), P_unload_max)
                 stored_energy[t+1] = max(0,stored_energy[t] - MW_to_W(P_unload[t])*dt)
                 P_core[t] = reac.P_max
                 P_core[t+1] =  P_core[t]

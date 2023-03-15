@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import math
 
-def compute_flows(P_core, P_load, P_unload, stored_energy):
+def compute_flows(P_core, P_load, P_unload, stored_energy, P_grid):
 
     primary_flow = MW_to_W(P_core) / (sodium.cp((reac_T_out + reac_T_in)/2) * (reac_T_out - reac_T_in))
     load_flow = MW_to_W(P_core) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
-    unload_flow = MW_to_W(P_unload) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
-    
+    unload_flow = MW_to_W(P_grid) / (nitrate_salt.cp((T_stock_hot + T_stock_cold)/2) * (T_stock_hot - T_stock_cold))
 
     return(primary_flow, load_flow, unload_flow)
 
@@ -43,7 +42,7 @@ def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_un
 
     range = (x1,x2)
     fig = plt.figure()
-    gs = gridspec.GridSpec(2,2)
+    gs = gridspec.GridSpec(3,1)
 
     ax1=fig.add_subplot(gs[0,0])
     ax1.plot(Time[range[0]:range[1]]/1440, Joules_to_MWh(stored_energy[range[0]:range[1]]),'orange', linewidth='3')
@@ -58,7 +57,7 @@ def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_un
     ax1.grid()
 
 
-    ax2=fig.add_subplot(gs[1,:])
+    ax2=fig.add_subplot(gs[2,0])
     ax2.plot(Time[range[0]:range[1]]/1440, (P_core[range[0]:range[1]] + P_unload[range[0]:range[1]])*eta, 'r', label = "Total output power", linewidth='3')
     ax2.plot(Time[range[0]:range[1]]/1440, P_core[range[0]:range[1]]*eta, label = "Reactor power level", linewidth='3')
     ax2.plot(Time[range[0]:range[1]]/1440, P_grid[range[0]:range[1]]*eta, 'y--', label = "Grid electrical load", linewidth='3')
@@ -73,17 +72,17 @@ def print_load_graph(P_grid, reac, max_stored_energy, Time, P_core, P_load, P_un
     ax2.minorticks_on()
     ax2.grid()
 
-    ax3=fig.add_subplot(gs[0,1])
-    ax3.plot(Time[range[0]:range[1]]/1440, (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
-    ax3.set_xlabel("Time (h)")
-    ax3.set_ylabel("Power (MW)")
-    ax3.set_title("Storage system input load")
-    ax3.set_ylim(-(system_max_power - reac.P_max*eta),reac.P_max*1.05*eta)
-    ax3.grid(which='major', color='#DDDDDD', linewidth=1)
-    ax3.grid()
-    ax3.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
-    ax3.minorticks_on()
-    ax3.grid()
+    # ax3=fig.add_subplot(gs[1,0])
+    # ax3.plot(Time[range[0]:range[1]]/1440, (P_load[range[0]:range[1]] - P_unload[range[0]:range[1]])*eta,'r', linewidth='3')
+    # ax3.set_xlabel("Time (h)")
+    # ax3.set_ylabel("Power (MW)")
+    # ax3.set_title("Storage system input load")
+    # ax3.set_ylim(-(1.05*reac.P_max*eta),reac.P_max*1.05*eta)
+    # ax3.grid(which='major', color='#DDDDDD', linewidth=1)
+    # ax3.grid()
+    # ax3.grid(which='minor', color='#EEEEEE', linestyle='--', linewidth=0.75)
+    # ax3.minorticks_on()
+    # ax3.grid()
     plt.show()
 
 def print_flows(Time, primary_flow, load_flow, unload_flow, x1, x2):
@@ -123,13 +122,12 @@ def grid_equilibrium(P_grid, P_core, P_unload):
             # E_missed += (P_grid[i]-P_core[i]) * eta * dt * 1e6
     return eq_boolean,c, E_missed
 
-
 def run(PN_reac, storage_time, profile): #Simple run function for single storage experiment
 
     (reac, hot_tank, cold_tank, max_stored_energy, P_unload_max)  = system_initialize(PN_reac, storage_time)
     P_grid = np.array(profile)*(system_max_power/eta)/100
     (Time, P_core, P_load, P_unload, stored_energy) = load_following(P_grid, reac, max_stored_energy, P_unload_max)
-    (primary_flow, load_flow, unload_flow) = compute_flows(P_core, P_load, P_unload, stored_energy)
+    (primary_flow, load_flow, unload_flow) = compute_flows(P_core, P_load, P_unload, stored_energy, P_grid)
     
     print()
     print('Case study :')
@@ -220,7 +218,8 @@ def storage_time_study(profile, sys_max_pow):
     ax2.yaxis.tick_right()
     ax2.yaxis.set_label_position("right")
     ax2.set_xticks(np.arange(0, max(nominal_power), 50))
-    ax2.set_yticks(np.arange(0, max(salt_mass), int(10**(math.ceil(math.log10(max(salt_mass))))/20)))
+    # ax2.set_yticks(np.arange(0, max(salt_mass), int(10**(math.ceil(math.log10(max(salt_mass))))/20)))
+    ax2.set_yticks(np.arange(0, max(salt_mass), 100000))
     plt.ylabel('Salt mass (t)')
     plt.xlabel('Reactor nominal power')
     ax2.grid(which='major', color='#DDDDDD', linewidth=1)
